@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "data-science-mcp-server"
+name = "engineer-your-data"
 version = "0.1.0"
-description = "MCP server for local data science operations"
+description = "MCP server for data engineering and business intelligence operations"
 authors = [{name = "Huzaifa Shaikh", email = "your.email@example.com"}]
 readme = "README.md"
 requires-python = ">=3.9"

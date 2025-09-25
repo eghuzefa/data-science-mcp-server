@@ -1,90 +1,131 @@
-# Data Science MCP Server
+# Engineer Your Data
 
-A Model Context Protocol (MCP) server that provides local data science capabilities to AI assistants. Execute pandas, sklearn, numpy operations directly without internet dependency.
+A Model Context Protocol (MCP) server designed specifically for **data engineers** and **business intelligence professionals**. Transform your data pipelines and BI workflows with AI-assisted data engineering capabilities that run locally without internet dependency.
 
-## Features
+## Why Engineer Your Data?
 
-🔧 **Core Tools**:
-- Execute pandas operations on local datasets
-- Run scikit-learn ML analyses 
-- Perform numpy mathematical computations
-- Generate matplotlib/seaborn visualizations
-- Load/save data in multiple formats (CSV, Excel, Parquet)
-- Get dataset metadata and profiling
+Built from the ground up for data engineering teams and BI analysts who need:
+- **Pipeline Development** - Build and test ETL/ELT transformations
+- **Data Quality Assurance** - Profile and validate data sources
+- **Business Intelligence** - Create analytics models and dashboard visualizations
+- **Local Control** - Keep sensitive data on-premises with no cloud dependencies
 
-🎯 **Target Users**:
-- Data Engineers
-- Data Analysts  
-- Business Intelligence Analysts
-- Machine Learning Engineers
+## Core Capabilities
 
-## Quick Start
+🚀 **Data Engineering Tools**:
+- `ingest_data_source` - Connect to and ingest from multiple data sources
+- `transform_dataset` - Apply data transformations and cleaning operations
+- `profile_data_source` - Comprehensive data quality profiling and validation
+- `export_results` - Output processed data to various formats
+
+📊 **Business Intelligence Tools**:
+- `run_analytics_model` - Execute statistical analysis and predictive models
+- `compute_metrics` - Calculate KPIs and business metrics
+- `create_dashboard_chart` - Generate publication-ready charts and visualizations
+
+🎯 **Target Audience**:
+- **Data Engineers** - ETL pipeline development and data integration
+- **BI Analysts** - Dashboard creation and business reporting
+- **Analytics Engineers** - dbt-style transformations and modeling
+- **Data Platform Teams** - Data quality monitoring and governance
+
+## Quick Start for Data Teams
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/eghuzefa/data-science-mcp-server.git
-cd data-science-mcp-server
+git clone https://github.com/eghuzefa/engineer-your-data.git
+cd engineer-your-data
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### Usage
+### Configure for Your Data Environment
 
-1. **Configure Claude Desktop** (add to `claude_desktop_config.json`):
+Add to your Claude Desktop configuration (`claude_desktop_config.json`):
+
 ```json
 {
   "mcpServers": {
-    "data-science": {
+    "engineer-your-data": {
       "command": "python",
-      "args": ["/path/to/data-science-mcp-server/src/server.py"],
+      "args": ["/path/to/engineer-your-data/src/server.py"],
       "env": {
-        "WORKSPACE_PATH": "/Users/huzaifashaikh/Local Documents"
+        "WORKSPACE_PATH": "/path/to/your/data/workspace"
       }
     }
   }
 }
 ```
 
-2. **Start using in Claude**:
+### Data Engineering Examples
+
+**ETL Pipeline Development:**
 ```
-"Load my sales_data.csv and show me the correlation matrix"
-"Run a quick data quality check on this dataset"
-"Create clusters from this customer data using K-means"
+"Ingest the customer_orders.csv file and profile the data quality"
+"Transform the dataset to clean null values in the email column"
+"Export the cleaned data as parquet format for the data warehouse"
 ```
 
-## Architecture
+**Business Intelligence Analysis:**
+```
+"Create a dashboard chart showing monthly revenue trends"
+"Run analytics model to identify customer segments using clustering"
+"Compute key metrics like customer lifetime value from this dataset"
+```
+
+**Data Quality Monitoring:**
+```
+"Profile this data source and identify any data quality issues"
+"Check for duplicate records and missing values across all columns"
+"Generate a data quality report for the monthly data refresh"
+```
+
+## Architecture for Data Teams
 
 ```
-Claude Desktop → MCP Protocol → Data Science Server → Local Python Environment
-                                      ↓
-                               pandas/sklearn/numpy
-                                      ↓
-                                Local File System
+Claude Desktop → MCP Protocol → Engineer Your Data → Local Python Environment
+                                        ↓
+                          pandas (ETL) + scikit-learn (Analytics)
+                                        ↓
+                              Your Data Warehouse/Lake
 ```
 
 ## Available Tools
 
-- `load_dataset` - Load CSV, Excel, Parquet files
-- `execute_pandas` - Run pandas operations
-- `execute_sklearn` - ML analysis and modeling
-- `execute_numpy` - Mathematical computations
-- `create_visualization` - Generate plots
-- `save_results` - Export analysis results
-- `get_dataset_info` - Dataset profiling and metadata
+### Data Ingestion & Integration
+- **`ingest_data_source`** - Load from CSV, Excel, Parquet, and database sources
+- **`profile_data_source`** - Data profiling, schema detection, and quality assessment
 
-## Security
+### Data Transformation & Processing
+- **`transform_dataset`** - ETL operations, data cleaning, and feature engineering
+- **`compute_metrics`** - Business KPIs, aggregations, and calculations
 
-- Sandboxed execution environment
-- Restricted file system access to configured workspace
-- No internet access required
-- Code execution logging
+### Analytics & Business Intelligence
+- **`run_analytics_model`** - Statistical analysis, ML models, and predictive analytics
+- **`create_dashboard_chart`** - BI visualizations, reports, and dashboard components
+- **`export_results`** - Output to data warehouse, BI tools, or reporting formats
+
+## Data Engineering Best Practices
+
+- **Sandboxed Execution** - Safe environment for testing transformations
+- **Local Data Control** - Keep sensitive data on your infrastructure
+- **Version Control Ready** - All operations logged and reproducible
+- **Enterprise Security** - No external API calls or data sharing
+
+## Integration with Your Stack
+
+Works seamlessly alongside:
+- **dbt** - Use for complex transformation logic development
+- **Airflow/Prefect** - Incorporate into existing workflow orchestration
+- **Jupyter/Notebooks** - Prototype and iterate on data transformations
+- **BI Tools** - Generate data and visualizations for Tableau, Power BI, etc.
 
 ## Contributing
 
-Contributions welcome! Please read our contributing guidelines and submit PRs.
+Data engineers and BI professionals welcome! Please read our contributing guidelines and submit PRs for new data connectors, transformations, or BI features.
 
 ## License
 

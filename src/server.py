@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 """
-Data Science MCP Server
+Engineer Your Data MCP Server
 
-Provides local data science capabilities through MCP protocol.
-Enables AI assistants to execute pandas, sklearn, numpy operations locally.
+Provides data engineering and BI capabilities through MCP protocol.
+Enables AI assistants to ingest, transform, and analyze data for business intelligence.
 """
 
 import asyncio
@@ -29,17 +29,17 @@ from mcp.types import (
 WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", "/Users/huzaifashaikh/Local Documents")
 
 # Create MCP server
-server = Server("data-science-mcp-server")
+server = Server("engineer-your-data")
 
 @server.list_tools()
 async def list_tools() -> List[Tool]:
     """
-    List available data science tools.
+    List available data engineering and BI tools.
     """
     return [
         Tool(
-            name="load_dataset",
-            description="Load datasets from CSV, Excel, or Parquet files",
+            name="ingest_data_source",
+            description="Ingest data from various sources (CSV, Excel, Parquet files)",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -61,8 +61,8 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
-            name="execute_pandas",
-            description="Execute pandas operations on loaded datasets",
+            name="transform_dataset",
+            description="Transform and manipulate datasets using pandas operations",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -79,8 +79,8 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
-            name="execute_sklearn",
-            description="Run scikit-learn ML analysis and modeling",
+            name="run_analytics_model",
+            description="Run advanced analytics models and statistical analysis",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -102,8 +102,8 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
-            name="execute_numpy",
-            description="Perform numpy mathematical operations",
+            name="compute_metrics",
+            description="Compute business metrics and mathematical calculations",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -120,8 +120,8 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
-            name="create_visualization",
-            description="Generate matplotlib/seaborn visualizations",
+            name="create_dashboard_chart",
+            description="Create charts and visualizations for dashboards and reports",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -148,8 +148,8 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
-            name="get_dataset_info",
-            description="Get dataset metadata, profiling, and summary statistics",
+            name="profile_data_source",
+            description="Profile data sources to understand data quality and characteristics",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -167,8 +167,8 @@ async def list_tools() -> List[Tool]:
             }
         ),
         Tool(
-            name="save_results",
-            description="Save analysis results to file",
+            name="export_results",
+            description="Export analysis results and reports to various formats",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -219,7 +219,7 @@ async def main():
     """
     Main entry point for the MCP server.
     """
-    logger.info("Starting Data Science MCP Server")
+    logger.info("Starting Engineer Your Data MCP Server")
     logger.info(f"Workspace path: {WORKSPACE_PATH}")
     
     async with stdio_server() as (read_stream, write_stream):
