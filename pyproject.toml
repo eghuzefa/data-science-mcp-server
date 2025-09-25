@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "engineer-your-data"
 version = "0.1.0"
 description = "MCP server for data engineering and business intelligence operations"
-authors = [{name = "Huzaifa Shaikh", email = "your.email@example.com"}]
+authors = [{name = "Huzaifa Shaikh", email = "190477365+eghuzefa@users.noreply.github.com"}]
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
