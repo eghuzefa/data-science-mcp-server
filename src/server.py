@@ -10,20 +10,21 @@ Enables AI assistants to ingest, transform, and analyze data for business intell
 import asyncio
 import json
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from loguru import logger
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import (
-    Resource,
     Tool,
     TextContent,
-    ImageContent,
-    EmbeddedResource,
-    LogLevel
+    ImageContent
 )
+
+# Import our modular tools
+from .tools.registry import registry
+from .tools.file_operations import ReadFileTool, WriteFileTool, ListFilesTool, FileInfoTool
+from .tools.data_validation import ValidateSchemaTool, CheckNullsTool, DataQualityReportTool, DetectDuplicatesTool
 
 # Initialize configuration
 WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", "/Users/huzaifashaikh/Local Documents")
@@ -31,165 +32,56 @@ WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", "/Users/huzaifashaikh/Local Documen
 # Create MCP server
 server = Server("engineer-your-data")
 
+# Initialize tool registry
+def initialize_tools():
+    """Initialize and register all available tools."""
+    logger.info("Initializing tools...")
+
+    # Define tools to register
+    tools_to_register = [
+        ReadFileTool,
+        WriteFileTool,
+        ListFilesTool,
+        FileInfoTool,
+        ValidateSchemaTool,
+        CheckNullsTool,
+        DataQualityReportTool,
+        DetectDuplicatesTool
+    ]
+
+    # Register tools if not already registered
+    for tool_class in tools_to_register:
+        tool_instance = tool_class()
+        tool_name = tool_instance.name
+
+        if tool_name not in registry.list_tools():
+            registry.register_tool(tool_class)
+        else:
+            logger.debug(f"Tool '{tool_name}' already registered, skipping")
+
+    logger.info(f"Registered {len(registry.list_tools())} tools: {', '.join(registry.list_tools())}")
+
+# Initialize tools at startup
+initialize_tools()
+
 @server.list_tools()
 async def list_tools() -> List[Tool]:
     """
     List available data engineering and BI tools.
     """
-    return [
-        Tool(
-            name="ingest_data_source",
-            description="Ingest data from various sources (CSV, Excel, Parquet files)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "file_path": {
-                        "type": "string",
-                        "description": "Path to the data file"
-                    },
-                    "file_type": {
-                        "type": "string",
-                        "enum": ["csv", "excel", "parquet"],
-                        "description": "Type of file to load"
-                    },
-                    "options": {
-                        "type": "object",
-                        "description": "Additional loading options"
-                    }
-                },
-                "required": ["file_path"]
-            }
-        ),
-        Tool(
-            name="transform_dataset",
-            description="Transform and manipulate datasets using pandas operations",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string",
-                        "description": "Pandas code to execute"
-                    },
-                    "dataset_name": {
-                        "type": "string",
-                        "description": "Name of the dataset to operate on"
-                    }
-                },
-                "required": ["code"]
-            }
-        ),
-        Tool(
-            name="run_analytics_model",
-            description="Run advanced analytics models and statistical analysis",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "operation": {
-                        "type": "string",
-                        "enum": ["cluster", "classify", "regress", "decompose", "preprocess"],
-                        "description": "Type of ML operation"
-                    },
-                    "dataset_name": {
-                        "type": "string",
-                        "description": "Dataset to operate on"
-                    },
-                    "parameters": {
-                        "type": "object",
-                        "description": "Algorithm parameters"
-                    }
-                },
-                "required": ["operation", "dataset_name"]
-            }
-        ),
-        Tool(
-            name="compute_metrics",
-            description="Compute business metrics and mathematical calculations",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string",
-                        "description": "Numpy code to execute"
-                    },
-                    "data_input": {
-                        "type": "string",
-                        "description": "Data source for numpy operations"
-                    }
-                },
-                "required": ["code"]
-            }
-        ),
-        Tool(
-            name="create_dashboard_chart",
-            description="Create charts and visualizations for dashboards and reports",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "plot_type": {
-                        "type": "string",
-                        "enum": ["histogram", "scatter", "line", "bar", "box", "heatmap", "pair"],
-                        "description": "Type of plot to create"
-                    },
-                    "dataset_name": {
-                        "type": "string",
-                        "description": "Dataset to visualize"
-                    },
-                    "columns": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "Columns to include in visualization"
-                    },
-                    "options": {
-                        "type": "object",
-                        "description": "Additional plot options"
-                    }
-                },
-                "required": ["plot_type", "dataset_name"]
-            }
-        ),
-        Tool(
-            name="profile_data_source",
-            description="Profile data sources to understand data quality and characteristics",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "dataset_name": {
-                        "type": "string",
-                        "description": "Name of dataset to profile"
-                    },
-                    "include_profile": {
-                        "type": "boolean",
-                        "description": "Include detailed data profiling",
-                        "default": True
-                    }
-                },
-                "required": ["dataset_name"]
-            }
-        ),
-        Tool(
-            name="export_results",
-            description="Export analysis results and reports to various formats",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "data": {
-                        "type": "string",
-                        "description": "Data or results to save"
-                    },
-                    "file_path": {
-                        "type": "string",
-                        "description": "Output file path"
-                    },
-                    "format": {
-                        "type": "string",
-                        "enum": ["csv", "excel", "parquet", "json"],
-                        "description": "Output format"
-                    }
-                },
-                "required": ["data", "file_path", "format"]
-            }
-        )
-    ]
+    # Get tool definitions from registry
+    tool_definitions = registry.get_mcp_tool_definitions()
+
+    # Convert to MCP Tool objects
+    tools = []
+    for tool_def in tool_definitions:
+        tools.append(Tool(
+            name=tool_def["name"],
+            description=tool_def["description"],
+            inputSchema=tool_def["inputSchema"]
+        ))
+
+    return tools
 
 @server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent | ImageContent]:
@@ -198,22 +90,25 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent | 
     """
     try:
         logger.info(f"Executing tool: {name} with args: {arguments}")
-        
-        # Basic implementation - we'll expand this with actual tool logic
-        result = {
-            "status": "success",
-            "tool": name,
-            "message": f"Tool {name} executed successfully",
-            "arguments": arguments
-        }
-        
+
+        # Execute tool using registry
+        result = await registry.execute_tool(name, **arguments)
+
+        # Format result as JSON for better readability
+        formatted_result = json.dumps(result, indent=2, default=str)
+
         logger.info(f"Tool {name} executed successfully")
-        return [TextContent(type="text", text=str(result))]
-        
+        return [TextContent(type="text", text=formatted_result)]
+
+    except KeyError:
+        error_msg = f"Tool '{name}' not found. Available tools: {', '.join(registry.list_tools())}"
+        logger.error(error_msg)
+        return [TextContent(type="text", text=json.dumps({"error": error_msg}, indent=2))]
+
     except Exception as e:
         error_msg = f"Error executing {name}: {str(e)}"
         logger.error(error_msg)
-        return [TextContent(type="text", text=error_msg)]
+        return [TextContent(type="text", text=json.dumps({"error": error_msg}, indent=2))]
 
 async def main():
     """

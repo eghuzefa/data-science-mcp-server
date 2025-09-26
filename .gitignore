@@ -84,3 +84,6 @@ logs/
 
 # MCP specific
 config.json
+
+# Development planning
+DEVELOPMENT_PLAN.md
