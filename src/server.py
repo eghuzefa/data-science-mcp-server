@@ -12,7 +12,7 @@ import json
 import os
 from typing import Any, Dict, List
 
-from loguru import logger
+from src.utils.logging import mcp_logger
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import (
@@ -25,6 +25,8 @@ from mcp.types import (
 from .tools.registry import registry
 from .tools.file_operations import ReadFileTool, WriteFileTool, ListFilesTool, FileInfoTool
 from .tools.data_validation import ValidateSchemaTool, CheckNullsTool, DataQualityReportTool, DetectDuplicatesTool
+from .tools.data_transformation import FilterDataTool, AggregateDataTool, JoinDataTool, PivotDataTool, CleanDataTool
+
 
 # Initialize configuration
 WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", "/Users/huzaifashaikh/Local Documents")
@@ -35,18 +37,26 @@ server = Server("engineer-your-data")
 # Initialize tool registry
 def initialize_tools():
     """Initialize and register all available tools."""
-    logger.info("Initializing tools...")
+    mcp_logger.info("Initializing tools...")
 
     # Define tools to register
     tools_to_register = [
+        # File Operations
         ReadFileTool,
         WriteFileTool,
         ListFilesTool,
         FileInfoTool,
+        # Data Validation
         ValidateSchemaTool,
         CheckNullsTool,
         DataQualityReportTool,
-        DetectDuplicatesTool
+        DetectDuplicatesTool,
+        # Data Transformation
+        FilterDataTool,
+        AggregateDataTool,
+        JoinDataTool,
+        PivotDataTool,
+        CleanDataTool
     ]
 
     # Register tools if not already registered
@@ -57,12 +67,13 @@ def initialize_tools():
         if tool_name not in registry.list_tools():
             registry.register_tool(tool_class)
         else:
-            logger.debug(f"Tool '{tool_name}' already registered, skipping")
+            mcp_logger.debug(f"Tool '{tool_name}' already registered, skipping")
 
-    logger.info(f"Registered {len(registry.list_tools())} tools: {', '.join(registry.list_tools())}")
+    mcp_logger.info(f"Registered {len(registry.list_tools())} tools: {', '.join(registry.list_tools())}")
 
 # Initialize tools at startup
 initialize_tools()
+
 
 @server.list_tools()
 async def list_tools() -> List[Tool]:
@@ -89,7 +100,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent | 
     Execute the requested tool with given arguments.
     """
     try:
-        logger.info(f"Executing tool: {name} with args: {arguments}")
+        mcp_logger.log_tool_execution(name, "start", arguments=arguments)
 
         # Execute tool using registry
         result = await registry.execute_tool(name, **arguments)
@@ -97,26 +108,26 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent | 
         # Format result as JSON for better readability
         formatted_result = json.dumps(result, indent=2, default=str)
 
-        logger.info(f"Tool {name} executed successfully")
+        mcp_logger.log_tool_execution(name, "success", result_size=len(formatted_result))
         return [TextContent(type="text", text=formatted_result)]
 
     except KeyError:
         error_msg = f"Tool '{name}' not found. Available tools: {', '.join(registry.list_tools())}"
-        logger.error(error_msg)
+        mcp_logger.error(error_msg)
         return [TextContent(type="text", text=json.dumps({"error": error_msg}, indent=2))]
 
     except Exception as e:
         error_msg = f"Error executing {name}: {str(e)}"
-        logger.error(error_msg)
+        mcp_logger.log_error_with_context(e, {"tool": name, "arguments": arguments})
         return [TextContent(type="text", text=json.dumps({"error": error_msg}, indent=2))]
 
 async def main():
     """
     Main entry point for the MCP server.
     """
-    logger.info("Starting Engineer Your Data MCP Server")
-    logger.info(f"Workspace path: {WORKSPACE_PATH}")
-    
+    mcp_logger.info("Starting Engineer Your Data MCP Server")
+    mcp_logger.info(f"Workspace path: {WORKSPACE_PATH}")
+
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,

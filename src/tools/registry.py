@@ -6,11 +6,9 @@ import inspect
 import importlib
 import pkgutil
 from typing import Dict, List, Type, Optional
-import logging
 
 from .base import BaseTool
-
-logger = logging.getLogger(__name__)
+from src.utils.logging import mcp_logger
 
 
 class ToolRegistry:
@@ -42,7 +40,7 @@ class ToolRegistry:
         self._tools[tool_name] = tool_instance
         self._tool_classes[tool_name] = tool_class
 
-        logger.info(f"Registered tool: {tool_name}")
+        mcp_logger.info(f"Registered tool: {tool_name}")
 
     def unregister_tool(self, tool_name: str) -> None:
         """
@@ -60,7 +58,7 @@ class ToolRegistry:
         del self._tools[tool_name]
         del self._tool_classes[tool_name]
 
-        logger.info(f"Unregistered tool: {tool_name}")
+        mcp_logger.info(f"Unregistered tool: {tool_name}")
 
     def get_tool(self, tool_name: str) -> BaseTool:
         """
@@ -144,17 +142,17 @@ class ToolRegistry:
                             try:
                                 self.register_tool(obj)
                                 discovered_count += 1
-                                logger.info(f"Auto-discovered tool: {obj.__name__}")
+                                mcp_logger.info(f"Auto-discovered tool: {obj.__name__}")
                             except ValueError as e:
-                                logger.warning(f"Failed to register tool {obj.__name__}: {e}")
+                                mcp_logger.warning(f"Failed to register tool {obj.__name__}: {e}")
 
                 except ImportError as e:
-                    logger.warning(f"Failed to import module {module_name}: {e}")
+                    mcp_logger.warning(f"Failed to import module {module_name}: {e}")
 
         except ImportError as e:
-            logger.error(f"Failed to import package {package_name}: {e}")
+            mcp_logger.error(f"Failed to import package {package_name}: {e}")
 
-        logger.info(f"Auto-discovery completed. Registered {discovered_count} tools.")
+        mcp_logger.info(f"Auto-discovery completed. Registered {discovered_count} tools.")
         return discovered_count
 
     async def execute_tool(self, tool_name: str, **kwargs) -> Dict:

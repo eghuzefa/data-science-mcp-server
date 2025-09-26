@@ -4,9 +4,7 @@ Base tool interface for all MCP tools.
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
-import logging
-
-logger = logging.getLogger(__name__)
+from src.utils.logging import mcp_logger
 
 
 class BaseTool(ABC):
@@ -15,7 +13,7 @@ class BaseTool(ABC):
     def __init__(self, config: Optional[Dict] = None):
         """Initialize the tool with optional configuration."""
         self.config = config or {}
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = mcp_logger
 
     @property
     @abstractmethod

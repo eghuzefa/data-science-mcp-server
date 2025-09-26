@@ -2,14 +2,15 @@
 File operations tools for reading, writing, and managing files.
 """
 
-import os
 import json
-import csv
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 
 from .base import BaseTool
+from src.utils.logging import mcp_logger
+from src.utils.decorators import log_execution_time
+from src.utils.helpers import detect_encoding, format_bytes
 
 
 class ReadFileTool(BaseTool):
@@ -50,13 +51,19 @@ class ReadFileTool(BaseTool):
             "required": ["file_path"]
         }
 
+    @log_execution_time("read_file")
     async def execute(self, file_path: str, file_type: str = "auto", options: Optional[Dict] = None) -> Dict[str, Any]:
         """Execute the read file operation."""
         options = options or {}
+
+        # Use utils for validation
         file_path = Path(file_path)
 
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
+
+
+        mcp_logger.log_tool_execution("read_file", "start", file_path=str(file_path), file_type=file_type)
 
         # Auto-detect file type if needed
         if file_type == "auto":
@@ -75,15 +82,23 @@ class ReadFileTool(BaseTool):
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
 
-            return {
+            result = {
                 "file_path": str(file_path),
                 "file_type": file_type,
                 "data": data,
                 "shape": self._get_data_shape(data),
-                "columns": self._get_columns(data)
+                "columns": self._get_columns(data),
+                "file_size": format_bytes(file_path.stat().st_size),
+                "encoding": detect_encoding(str(file_path)) if file_type in ["csv", "json"] else "binary"
             }
 
+            mcp_logger.log_tool_execution("read_file", "success",
+                                        records_read=len(data) if hasattr(data, '__len__') else 0,
+                                        file_size=file_path.stat().st_size)
+            return result
+
         except Exception as e:
+            mcp_logger.log_error_with_context(e, {"tool": "read_file", "file_path": str(file_path), "file_type": file_type})
             raise RuntimeError(f"Failed to read file {file_path}: {str(e)}")
 
     def _detect_file_type(self, file_path: Path) -> str:
