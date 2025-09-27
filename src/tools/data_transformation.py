@@ -2,8 +2,9 @@
 Data transformation tools for filtering, aggregation, and manipulation.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 import pandas as pd
+import re
 
 from .base import BaseTool
 
@@ -38,7 +39,9 @@ class FilterDataTool(BaseTool):
                             },
                             "operator": {
                                 "type": "string",
-                                "enum": ["==", "!=", ">", ">=", "<", "<=", "in", "not_in", "contains", "starts_with", "ends_with", "is_null", "is_not_null"],
+                                "enum": ["==", "!=", ">", ">=", "<", "<=", "in", "not_in", "contains", "starts_with", "ends_with",
+                                        "is_null", "is_not_null", "regex", "not_regex", "between", "not_between",
+                                        "length_eq", "length_gt", "length_lt"],
                                 "description": "Comparison operator"
                             },
                             "value": {
@@ -68,15 +71,26 @@ class FilterDataTool(BaseTool):
                     "enum": ["asc", "desc"],
                     "description": "Sort order",
                     "default": "asc"
+                },
+                "validate_output": {
+                    "type": "boolean",
+                    "description": "Whether to validate output data quality",
+                    "default": False
                 }
             },
             "required": ["data", "conditions"]
         }
 
-    async def execute(self, data: List[Dict], conditions: List[Dict],
-                     logic: str = "AND", limit: Optional[int] = None,
-                     sort_by: Optional[str] = None, sort_order: str = "asc") -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute data filtering operation."""
+        data = kwargs.get("data")
+        conditions = kwargs.get("conditions")
+        logic = kwargs.get("logic", "AND")
+        limit = kwargs.get("limit")
+        sort_by = kwargs.get("sort_by")
+        sort_order = kwargs.get("sort_order", "asc")
+        validate_output = kwargs.get("validate_output", False)
+
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
 
@@ -111,7 +125,7 @@ class FilterDataTool(BaseTool):
             # Convert back to list of dictionaries
             filtered_data = filtered_df.to_dict(orient="records")
 
-            return {
+            result = {
                 "filtered_data": filtered_data,
                 "original_count": len(data),
                 "filtered_count": len(filtered_data),
@@ -119,6 +133,13 @@ class FilterDataTool(BaseTool):
                 "logic": logic,
                 "filters_summary": self._generate_filter_summary(conditions, logic, len(data), len(filtered_data))
             }
+
+            # Add validation if requested
+            if validate_output:
+                validation_result = self._validate_data_quality(filtered_data)
+                result["validation"] = validation_result
+
+            return result
 
         except Exception as e:
             raise RuntimeError(f"Failed to filter data: {str(e)}")
@@ -187,6 +208,24 @@ class FilterDataTool(BaseTool):
             return series.isnull()
         elif operator == "is_not_null":
             return series.notnull()
+        elif operator == "regex":
+            return series.astype(str).str.contains(str(value), regex=True, na=False)
+        elif operator == "not_regex":
+            return ~series.astype(str).str.contains(str(value), regex=True, na=False)
+        elif operator == "between":
+            if not isinstance(value, list) or len(value) != 2:
+                raise ValueError("Value for 'between' operator must be a list of two values [min, max]")
+            return (series >= value[0]) & (series <= value[1])
+        elif operator == "not_between":
+            if not isinstance(value, list) or len(value) != 2:
+                raise ValueError("Value for 'not_between' operator must be a list of two values [min, max]")
+            return ~((series >= value[0]) & (series <= value[1]))
+        elif operator == "length_eq":
+            return series.astype(str).str.len() == value
+        elif operator == "length_gt":
+            return series.astype(str).str.len() > value
+        elif operator == "length_lt":
+            return series.astype(str).str.len() < value
         else:
             raise ValueError(f"Unsupported operator: {operator}")
 
@@ -205,6 +244,74 @@ class FilterDataTool(BaseTool):
                 f"{cond['field']} {cond['operator']} {cond.get('value', '')}"
                 for cond in conditions
             ]
+        }
+
+    def _validate_data_quality(self, data: List[Dict]) -> Dict:
+        """Validate data quality and return quality metrics."""
+        if not data:
+            return {
+                "quality_score": 1.0,
+                "total_records": 0,
+                "issues": [],
+                "recommendations": []
+            }
+
+        df = pd.DataFrame(data)
+        issues = []
+        recommendations = []
+
+        # Check for null values
+        null_counts = df.isnull().sum()
+        null_fields = null_counts[null_counts > 0].to_dict()
+        if null_fields:
+            issues.append({
+                "type": "null_values",
+                "description": f"Found null values in fields: {list(null_fields.keys())}",
+                "details": null_fields
+            })
+            recommendations.append("Consider filtering out or filling null values")
+
+        # Check for duplicate records
+        duplicates = df.duplicated().sum()
+        if duplicates > 0:
+            issues.append({
+                "type": "duplicate_records",
+                "description": f"Found {duplicates} duplicate records",
+                "count": duplicates
+            })
+            recommendations.append("Consider removing duplicate records")
+
+        # Check for empty strings
+        empty_string_counts = {}
+        for col in df.select_dtypes(include=['object']).columns:
+            empty_count = (df[col] == '').sum()
+            if empty_count > 0:
+                empty_string_counts[col] = empty_count
+
+        if empty_string_counts:
+            issues.append({
+                "type": "empty_strings",
+                "description": f"Found empty strings in fields: {list(empty_string_counts.keys())}",
+                "details": empty_string_counts
+            })
+            recommendations.append("Consider treating empty strings as null values")
+
+        # Calculate quality score (1.0 = perfect, 0.0 = very poor)
+        total_cells = len(data) * len(df.columns) if len(df.columns) > 0 else 1
+        problem_cells = sum(null_counts) + sum(empty_string_counts.values()) + duplicates * len(df.columns)
+        quality_score = max(0.0, 1.0 - (problem_cells / total_cells))
+
+        return {
+            "quality_score": round(quality_score, 3),
+            "total_records": len(data),
+            "total_fields": len(df.columns),
+            "issues": issues,
+            "recommendations": recommendations,
+            "summary": {
+                "null_values": len(null_fields),
+                "duplicates": duplicates,
+                "empty_strings": len(empty_string_counts)
+            }
         }
 
 
@@ -243,7 +350,9 @@ class AggregateDataTool(BaseTool):
                             },
                             "operation": {
                                 "type": "string",
-                                "enum": ["sum", "mean", "median", "min", "max", "count", "std", "var", "first", "last"],
+                                "enum": ["sum", "mean", "median", "min", "max", "count", "std", "var", "first", "last",
+                                        "percentile_25", "percentile_50", "percentile_75", "percentile_90", "percentile_95",
+                                        "mode", "nunique", "skew", "kurt", "range"],
                                 "description": "Aggregation operation"
                             },
                             "alias": {
@@ -270,13 +379,18 @@ class AggregateDataTool(BaseTool):
                     "minimum": 1
                 }
             },
-            "required": ["data", "group_by", "aggregations"]
+            "required": ["data", "aggregations"]
         }
 
-    async def execute(self, data: List[Dict], group_by: List[str], aggregations: List[Dict],
-                     sort_by: Optional[str] = None, sort_order: str = "asc",
-                     limit: Optional[int] = None) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute data aggregation operation."""
+        data = kwargs.get("data")
+        group_by = kwargs.get("group_by", [])
+        aggregations = kwargs.get("aggregations")
+        sort_by = kwargs.get("sort_by")
+        sort_order = kwargs.get("sort_order", "asc")
+        limit = kwargs.get("limit")
+
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
 
@@ -289,19 +403,17 @@ class AggregateDataTool(BaseTool):
                 "aggregations_applied": aggregations
             }
 
-        if not group_by:
-            raise ValueError("At least one group_by field must be provided")
-
         if not aggregations:
             raise ValueError("At least one aggregation must be provided")
 
         # Convert to DataFrame for easier aggregation
         df = pd.DataFrame(data)
 
-        # Validate group_by fields
-        missing_fields = [field for field in group_by if field not in df.columns]
-        if missing_fields:
-            raise ValueError(f"Group by fields not found in data: {missing_fields}")
+        # Validate group_by fields if provided
+        if group_by:
+            missing_fields = [field for field in group_by if field not in df.columns]
+            if missing_fields:
+                raise ValueError(f"Group by fields not found in data: {missing_fields}")
 
         # Validate aggregation fields
         agg_fields = [agg["field"] for agg in aggregations]
@@ -322,8 +434,9 @@ class AggregateDataTool(BaseTool):
             if limit:
                 aggregated_df = aggregated_df.head(limit)
 
-            # Reset index to make group_by fields regular columns
-            aggregated_df = aggregated_df.reset_index()
+            # Reset index to make group_by fields regular columns (only if grouped)
+            if group_by:
+                aggregated_df = aggregated_df.reset_index()
 
             # Convert to list of dictionaries
             aggregated_data = aggregated_df.to_dict(orient="records")
@@ -365,6 +478,19 @@ class AggregateDataTool(BaseTool):
                 agg_func = "first"
             elif operation == "last":
                 agg_func = "last"
+            elif operation == "mode":
+                agg_func = lambda x: x.mode().iloc[0] if not x.mode().empty else None
+            elif operation == "nunique":
+                agg_func = "nunique"
+            elif operation == "skew":
+                agg_func = "skew"
+            elif operation == "kurt":
+                agg_func = lambda x: x.kurtosis()
+            elif operation == "range":
+                agg_func = lambda x: x.max() - x.min()
+            elif operation.startswith("percentile_"):
+                percentile = int(operation.split("_")[1])
+                agg_func = lambda x, p=percentile: x.quantile(p/100)
             else:
                 agg_func = operation  # sum, min, max, count
 
@@ -378,8 +504,15 @@ class AggregateDataTool(BaseTool):
                 agg_dict[field] = agg_func
 
         # Perform groupby and aggregation
-        grouped = df.groupby(group_by)
-        result = grouped.agg(agg_dict)
+        if group_by:
+            grouped = df.groupby(group_by)
+            result = grouped.agg(agg_dict)
+        else:
+            # Overall aggregation without grouping
+            result = df.agg(agg_dict)
+            # Convert to DataFrame if Series (single row result)
+            if isinstance(result, pd.Series):
+                result = result.to_frame().T
 
         # Flatten column names if multi-level
         if isinstance(result.columns, pd.MultiIndex):
@@ -475,26 +608,26 @@ class JoinDataTool(BaseTool):
             "required": ["left_data", "right_data", "left_on"]
         }
 
-    async def execute(self, left_data: List[Dict], right_data: List[Dict],
-                     left_on: List[str], join_type: str = "inner",
-                     right_on: Optional[List[str]] = None,
-                     suffixes: List[str] = ["_left", "_right"]) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the join operation."""
-        if not isinstance(left_data, list) or not isinstance(right_data, list):
-            raise ValueError("Both datasets must be lists of dictionaries")
+        left_data = kwargs.get("left_data")
+        right_data = kwargs.get("right_data")
+        left_on = kwargs.get("left_on")
+        join_type = kwargs.get("join_type", "inner")
+        right_on = kwargs.get("right_on")
+        suffixes = kwargs.get("suffixes", ["_left", "_right"])
 
-        if not left_data or not right_data:
-            return {
-                "joined_data": [],
-                "left_count": len(left_data),
-                "right_count": len(right_data),
-                "result_count": 0,
-                "join_type": join_type,
-                "join_keys": {"left": left_on, "right": right_on or left_on}
-            }
+        # Validate required parameters
+        if not left_data or not isinstance(left_data, list):
+            raise ValueError("left_data must be a non-empty list of dictionaries")
+        if not right_data or not isinstance(right_data, list):
+            raise ValueError("right_data must be a non-empty list of dictionaries")
+        if not left_on:
+            raise ValueError("left_on is required")
 
         # Use right_on if provided, otherwise use left_on for both sides
-        right_on = right_on or left_on
+        if right_on is None:
+            right_on = left_on
 
         # Validate join keys exist
         left_df = pd.DataFrame(left_data)
@@ -595,12 +728,18 @@ class PivotDataTool(BaseTool):
             "required": ["data", "index", "columns", "values"]
         }
 
-    async def execute(self, data: List[Dict], index: List[str], columns: str,
-                     values: str, aggfunc: str = "sum", fill_value: Any = 0) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the pivot operation."""
+        data = kwargs.get("data")
+        index = kwargs.get("index")
+        columns = kwargs.get("columns")
+        values = kwargs.get("values")
+        aggfunc = kwargs.get("aggfunc", "sum")
+        fill_value = kwargs.get("fill_value", 0)
+
+        # Validate required parameters
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
-
         if not data:
             return {
                 "pivoted_data": [],
@@ -608,6 +747,12 @@ class PivotDataTool(BaseTool):
                 "pivoted_shape": [0, 0],
                 "pivot_columns": []
             }
+        if not index:
+            raise ValueError("index is required")
+        if not columns:
+            raise ValueError("columns is required")
+        if not values:
+            raise ValueError("values is required")
 
         df = pd.DataFrame(data)
 
@@ -706,8 +851,11 @@ class CleanDataTool(BaseTool):
             "required": ["data", "operations"]
         }
 
-    async def execute(self, data: List[Dict], operations: List[Dict]) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute data cleaning operations."""
+        data = kwargs.get("data")
+        operations = kwargs.get("operations")
+
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
 

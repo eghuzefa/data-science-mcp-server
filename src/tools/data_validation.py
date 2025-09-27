@@ -21,7 +21,7 @@ class ValidateSchemaTool(BaseTool):
 
     @property
     def description(self) -> str:
-        return "Validate data against a defined schema with type checking and constraints"
+        return "Validate data against expected schema with type checking and constraints"
 
     def get_schema(self) -> Dict:
         return {
@@ -59,15 +59,22 @@ class ValidateSchemaTool(BaseTool):
             "required": ["data", "schema"]
         }
 
-    async def execute(self, data: List[Dict], schema: Dict) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute schema validation."""
+        data = kwargs.get("data")
+        schema = kwargs.get("schema")
+
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
 
-        if not isinstance(schema, dict) or "fields" not in schema:
-            raise ValueError("Schema must contain 'fields' definition")
+        if not isinstance(schema, dict):
+            raise ValueError("Schema must be a dictionary")
 
-        field_definitions = schema["fields"]
+        # Support both direct field definitions and nested under "fields"
+        if "fields" in schema:
+            field_definitions = schema["fields"]
+        else:
+            field_definitions = schema
         validation_results = {
             "total_records": len(data),
             "valid_records": 0,
@@ -297,8 +304,11 @@ class CheckNullsTool(BaseTool):
             "required": ["data"]
         }
 
-    async def execute(self, data: List[Dict], null_values: Optional[List[str]] = None) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute null value analysis."""
+        data = kwargs.get("data")
+        null_values = kwargs.get("null_values")
+
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
 
@@ -463,8 +473,12 @@ class DataQualityReportTool(BaseTool):
             "required": ["data"]
         }
 
-    async def execute(self, data: List[Dict], include_samples: bool = True, sample_size: int = 5) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute data quality analysis."""
+        data = kwargs.get("data")
+        include_samples = kwargs.get("include_samples", True)
+        sample_size = kwargs.get("sample_size", 5)
+
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
 
@@ -761,17 +775,19 @@ class DetectDuplicatesTool(BaseTool):
             "required": ["data"]
         }
 
-    async def execute(self, data: List[Dict], key_fields: Optional[List[str]] = None,
-                     ignore_fields: Optional[List[str]] = None, case_sensitive: bool = False,
-                     include_duplicates: bool = True) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute duplicate detection."""
+        data = kwargs.get("data")
+        key_fields = kwargs.get("key_fields")
+        ignore_fields = kwargs.get("ignore_fields") or []
+        case_sensitive = kwargs.get("case_sensitive", False)
+        include_duplicates = kwargs.get("include_duplicates", True)
+
         if not isinstance(data, list):
             raise ValueError("Data must be a list of dictionaries")
 
         if not data:
             return {"message": "No data to analyze"}
-
-        ignore_fields = ignore_fields or []
         df = pd.DataFrame(data)
 
         # Determine fields to use for comparison

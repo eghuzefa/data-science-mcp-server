@@ -52,12 +52,16 @@ class ReadFileTool(BaseTool):
         }
 
     @log_execution_time("read_file")
-    async def execute(self, file_path: str, file_type: str = "auto", options: Optional[Dict] = None) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the read file operation."""
-        options = options or {}
+        file_path_str = kwargs.get("file_path")
+        if not file_path_str:
+            raise ValueError("file_path is required")
+        file_type = kwargs.get("file_type", "auto")
+        options = kwargs.get("options") or {}
 
         # Use utils for validation
-        file_path = Path(file_path)
+        file_path = Path(file_path_str)
 
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -119,8 +123,9 @@ class ReadFileTool(BaseTool):
         """Read CSV file."""
         encoding = options.get("encoding", "utf-8")
         delimiter = options.get("delimiter", ",")
+        nrows = options.get("nrows")
 
-        df = pd.read_csv(file_path, encoding=encoding, delimiter=delimiter)
+        df = pd.read_csv(file_path, encoding=encoding, delimiter=delimiter, nrows=nrows)
         return df.to_dict(orient="records")
 
     def _read_json(self, file_path: Path, options: Dict) -> Union[Dict, List]:
@@ -204,10 +209,18 @@ class WriteFileTool(BaseTool):
             "required": ["file_path", "data"]
         }
 
-    async def execute(self, file_path: str, data: Any, file_type: str = "auto", options: Optional[Dict] = None) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the write file operation."""
-        options = options or {}
-        file_path = Path(file_path)
+        file_path_str = kwargs.get("file_path")
+        if not file_path_str:
+            raise ValueError("file_path is required")
+        data = kwargs.get("data")
+        if data is None:
+            raise ValueError("data is required")
+        file_type = kwargs.get("file_type", "auto")
+        options = kwargs.get("options") or {}
+
+        file_path = Path(file_path_str)
 
         # Create directory if it doesn't exist
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -328,10 +341,15 @@ class ListFilesTool(BaseTool):
             "required": []
         }
 
-    async def execute(self, directory: str = ".", pattern: Optional[str] = None,
-                     recursive: bool = False, include_hidden: bool = False,
-                     min_size: Optional[int] = None, max_size: Optional[int] = None) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the list files operation."""
+        directory = kwargs.get("directory", ".")
+        pattern = kwargs.get("pattern")
+        recursive = kwargs.get("recursive", False)
+        include_hidden = kwargs.get("include_hidden", False)
+        min_size = kwargs.get("min_size")
+        max_size = kwargs.get("max_size")
+
         directory_path = Path(directory)
 
         if not directory_path.exists():
@@ -403,7 +421,7 @@ class FileInfoTool(BaseTool):
 
     @property
     def description(self) -> str:
-        return "Get detailed information about a file including metadata and basic statistics"
+        return "Get file metadata and detailed information about a file including basic statistics"
 
     def get_schema(self) -> Dict:
         return {
@@ -427,9 +445,15 @@ class FileInfoTool(BaseTool):
             "required": ["file_path"]
         }
 
-    async def execute(self, file_path: str, include_preview: bool = True, preview_lines: int = 5) -> Dict[str, Any]:
+    async def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the file info operation."""
-        file_path = Path(file_path)
+        file_path_str = kwargs.get("file_path")
+        if not file_path_str:
+            raise ValueError("file_path is required")
+        include_preview = kwargs.get("include_preview", True)
+        preview_lines = kwargs.get("preview_lines", 5)
+
+        file_path = Path(file_path_str)
 
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -453,6 +477,16 @@ class FileInfoTool(BaseTool):
 
             # Try to detect file type and get additional info
             file_type = self._detect_file_type(file_path)
+
+            # Add encoding and line count for text files
+            if file_type in ["csv", "json", "text"]:
+                try:
+                    info["encoding"] = detect_encoding(str(file_path))
+                    with open(file_path, 'r', encoding=info["encoding"]) as f:
+                        info["line_count"] = sum(1 for _ in f)
+                except Exception:
+                    info["encoding"] = "unknown"
+                    info["line_count"] = "unknown"
             if file_type:
                 info["detected_type"] = file_type
 
@@ -547,8 +581,9 @@ class FileInfoTool(BaseTool):
 
         size_names = ["B", "KB", "MB", "GB", "TB"]
         i = 0
-        while size_bytes >= 1024 and i < len(size_names) - 1:
-            size_bytes /= 1024.0
+        size_float = float(size_bytes)
+        while size_float >= 1024 and i < len(size_names) - 1:
+            size_float /= 1024.0
             i += 1
 
-        return f"{size_bytes:.1f} {size_names[i]}"
+        return f"{size_float:.1f} {size_names[i]}"

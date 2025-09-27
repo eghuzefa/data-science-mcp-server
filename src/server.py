@@ -26,6 +26,9 @@ from .tools.registry import registry
 from .tools.file_operations import ReadFileTool, WriteFileTool, ListFilesTool, FileInfoTool
 from .tools.data_validation import ValidateSchemaTool, CheckNullsTool, DataQualityReportTool, DetectDuplicatesTool
 from .tools.data_transformation import FilterDataTool, AggregateDataTool, JoinDataTool, PivotDataTool, CleanDataTool
+from .tools.tool_chaining import ToolChainExecutor
+from .tools.schema_introspection import DataSchemaAnalyzer
+from .tools.api_client import FetchApiDataTool, MonitorApiTool, BatchApiCallsTool, ApiAuthTool
 
 
 # Initialize configuration
@@ -56,7 +59,16 @@ def initialize_tools():
         AggregateDataTool,
         JoinDataTool,
         PivotDataTool,
-        CleanDataTool
+        CleanDataTool,
+        # Tool Chaining
+        ToolChainExecutor,
+        # Schema Introspection
+        DataSchemaAnalyzer,
+        # API Client Tools
+        FetchApiDataTool,
+        MonitorApiTool,
+        BatchApiCallsTool,
+        ApiAuthTool
     ]
 
     # Register tools if not already registered
