@@ -56,7 +56,7 @@ git clone https://github.com/eghuzefa/engineer-your-data.git
 cd engineer-your-data
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### Configure for Your Data Environment
