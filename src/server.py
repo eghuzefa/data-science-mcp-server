@@ -29,6 +29,7 @@ from .tools.data_transformation import FilterDataTool, AggregateDataTool, JoinDa
 from .tools.tool_chaining import ToolChainExecutor
 from .tools.schema_introspection import DataSchemaAnalyzer
 from .tools.api_client import FetchApiDataTool, MonitorApiTool, BatchApiCallsTool, ApiAuthTool
+from .tools.visualization import CreateChartTool, DataSummaryTool, ExportVisualizationTool
 
 
 # Initialize configuration
@@ -68,7 +69,11 @@ def initialize_tools():
         FetchApiDataTool,
         MonitorApiTool,
         BatchApiCallsTool,
-        ApiAuthTool
+        ApiAuthTool,
+        # Visualization Tools
+        CreateChartTool,
+        DataSummaryTool,
+        ExportVisualizationTool
     ]
 
     # Register tools if not already registered
