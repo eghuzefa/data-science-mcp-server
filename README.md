@@ -10,6 +10,18 @@ Built from the ground up for data engineering teams and BI analysts who need:
 - **Business Intelligence** - Create analytics models and dashboard visualizations
 - **Local Control** - Keep sensitive data on-premises with no cloud dependencies
 
+## 🚀 Quick Start
+
+**New to Engineer Your Data?** Start with these 5 essential operations:
+
+1. **Check Data Quality**: `"Generate a data quality report for my sales.csv file"`
+2. **Find Issues**: `"Check for null values in the customer_data.csv"`
+3. **Transform Data**: `"Filter the orders.csv for rows where status is 'completed'"`
+4. **Visualize**: `"Create a bar chart showing sales by region from revenue.csv"`
+5. **Summarize**: `"Give me a statistical summary of the dataset"`
+
+These cover 80% of daily data engineering tasks. Explore the full capabilities below!
+
 ## Core Capabilities
 
 🚀 **File Operations**:
@@ -51,16 +63,18 @@ Built from the ground up for data engineering teams and BI analysts who need:
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/eghuzefa/engineer-your-data.git
-cd engineer-your-data
+# Option 1: Install from PyPI (recommended)
+pip install engineer-your-data
 
-# Install dependencies
+# Option 2: Install from source
+git clone https://github.com/eghuzefa/engineer-your-data-mcp.git
+cd engineer-your-data-mcp
 pip install -e .
 ```
 
 ### Configure for Your Data Environment
 
+**For PyPI Installation:**
 Add to your Claude Desktop configuration (`claude_desktop_config.json`):
 
 ```json
@@ -68,7 +82,24 @@ Add to your Claude Desktop configuration (`claude_desktop_config.json`):
   "mcpServers": {
     "engineer-your-data": {
       "command": "python",
-      "args": ["/path/to/engineer-your-data/src/server.py"],
+      "args": ["-m", "src.server"],
+      "env": {
+        "WORKSPACE_PATH": "/path/to/your/data/workspace"
+      }
+    }
+  }
+}
+```
+
+**For Source Installation:**
+Add to your Claude Desktop configuration (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "engineer-your-data": {
+      "command": "python",
+      "args": ["/path/to/engineer-your-data-mcp/src/server.py"],
       "env": {
         "WORKSPACE_PATH": "/path/to/your/data/workspace"
       }
@@ -198,6 +229,12 @@ Works seamlessly alongside:
 ## Contributing
 
 Data engineers and BI professionals welcome! Please read our contributing guidelines and submit PRs for new data connectors, transformations, or BI features.
+
+## MCP Registry
+
+<!-- MCP name format: mcp-name: io.github.eghuzefa/engineer-your-data -->
+
+This server is available in the official [Model Context Protocol Registry](https://registry.modelcontextprotocol.io).
 
 ## License
 

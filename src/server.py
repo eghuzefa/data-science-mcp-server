@@ -33,7 +33,7 @@ from .tools.visualization import CreateChartTool, DataSummaryTool, ExportVisuali
 
 
 # Initialize configuration
-WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", "/Users/huzaifashaikh/Local Documents")
+WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", os.path.expanduser("~/Local Documents"))
 
 # Create MCP server
 server = Server("engineer-your-data")
