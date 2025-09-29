@@ -88,3 +88,6 @@ config.json
 # Development planning
 DEVELOPMENT_PLAN.md
 PUBLISHING_*.md
+.mcpregistry_github_token
+.gitignore
+.mcpregistry_registry_token
