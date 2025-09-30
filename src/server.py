@@ -138,9 +138,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent | 
         mcp_logger.log_error_with_context(e, {"tool": name, "arguments": arguments})
         return [TextContent(type="text", text=json.dumps({"error": error_msg}, indent=2))]
 
-async def main():
+async def async_main():
     """
-    Main entry point for the MCP server.
+    Async entry point for the MCP server.
     """
     mcp_logger.info("Starting Engineer Your Data MCP Server")
     mcp_logger.info(f"Workspace path: {WORKSPACE_PATH}")
@@ -152,5 +152,11 @@ async def main():
             server.create_initialization_options()
         )
 
+def main():
+    """
+    Synchronous wrapper for console script entry point.
+    """
+    asyncio.run(async_main())
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
