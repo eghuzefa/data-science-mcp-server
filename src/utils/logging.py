@@ -22,8 +22,8 @@ class MCPLogger:
 
     def _setup_handlers(self) -> None:
         """Setup console and file handlers."""
-        # Console handler
-        console_handler = logging.StreamHandler(sys.stdout)
+        # Console handler - use stderr to avoid interfering with MCP protocol on stdout
+        console_handler = logging.StreamHandler(sys.stderr)
         console_handler.setLevel(logging.INFO)
 
         # Create formatters
