@@ -12,7 +12,7 @@ import json
 import os
 from typing import Any, Dict, List
 
-from src.utils.logging import mcp_logger
+from .utils.logging import mcp_logger
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import (
@@ -33,7 +33,7 @@ from .tools.visualization import CreateChartTool, DataSummaryTool, ExportVisuali
 
 
 # Initialize configuration
-WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", os.path.expanduser("~/Local Documents"))
+WORKSPACE_PATH = os.getenv("WORKSPACE_PATH", os.path.expanduser("~/Documents"))
 
 # Create MCP server
 server = Server("engineer-your-data")
