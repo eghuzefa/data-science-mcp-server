@@ -1,5 +1,8 @@
 # Engineer Your Data
 
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-Published-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=engineer-your-data)
+[![PyPI](https://img.shields.io/pypi/v/engineer-your-data)](https://pypi.org/project/engineer-your-data/)
+
 A Model Context Protocol (MCP) server designed specifically for **data engineers** and **business intelligence professionals**. Transform your data pipelines and BI workflows with AI-assisted data engineering capabilities that run locally without internet dependency.
 
 ## Why Engineer Your Data?
