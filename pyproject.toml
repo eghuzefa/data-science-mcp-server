@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "engineer-your-data"
-version = "0.1.1"
+version = "0.1.2"
 description = "MCP server for data engineering and business intelligence operations"
 authors = [{name = "Huzaifa Shaikh", email = "190477365+eghuzefa@users.noreply.github.com"}]
 readme = "README.md"
