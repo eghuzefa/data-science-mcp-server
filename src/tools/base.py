@@ -69,8 +69,8 @@ class BaseTool(ABC):
         """
         # Basic validation - subclasses can override for custom validation
         schema = self.get_schema()
-        properties = schema.get('properties', {})
-        required = schema.get('required', [])
+        properties = schema.get("properties", {})
+        required = schema.get("required", [])
 
         # Check required parameters
         for param in required:
@@ -104,18 +104,11 @@ class BaseTool(ABC):
             result = await self.execute(**validated_kwargs)
 
             self.logger.info(f"Tool '{self.name}' executed successfully")
-            return {
-                'success': True,
-                'result': result
-            }
+            return {"success": True, "result": result}
 
         except Exception as e:
             self.logger.error(f"Tool '{self.name}' execution failed: {str(e)}")
-            return {
-                'success': False,
-                'error': str(e),
-                'result': None
-            }
+            return {"success": False, "error": str(e), "result": None}
 
     def get_mcp_tool_definition(self) -> Dict:
         """
@@ -125,10 +118,7 @@ class BaseTool(ABC):
             MCP tool definition dictionary
         """
         return {
-            'name': self.name,
-            'description': self.description,
-            'inputSchema': {
-                'type': 'object',
-                **self.get_schema()
-            }
+            "name": self.name,
+            "description": self.description,
+            "inputSchema": {"type": "object", **self.get_schema()},
         }

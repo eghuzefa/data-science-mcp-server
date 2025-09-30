@@ -4,7 +4,13 @@ Tool chaining support for executing multiple data tools in sequence.
 
 from typing import Any, Dict, List
 from .base import BaseTool
-from .data_transformation import FilterDataTool, AggregateDataTool, JoinDataTool, PivotDataTool, CleanDataTool
+from .data_transformation import (
+    FilterDataTool,
+    AggregateDataTool,
+    JoinDataTool,
+    PivotDataTool,
+    CleanDataTool,
+)
 
 
 class ToolChainExecutor(BaseTool):
@@ -23,7 +29,7 @@ class ToolChainExecutor(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Initial data to process (list of dictionaries)"
+                    "description": "Initial data to process (list of dictionaries)",
                 },
                 "chain": {
                     "type": "array",
@@ -33,28 +39,34 @@ class ToolChainExecutor(BaseTool):
                         "properties": {
                             "tool": {
                                 "type": "string",
-                                "enum": ["filter_data", "aggregate_data", "join_data", "pivot_data", "clean_data"],
-                                "description": "Tool to execute"
+                                "enum": [
+                                    "filter_data",
+                                    "aggregate_data",
+                                    "join_data",
+                                    "pivot_data",
+                                    "clean_data",
+                                ],
+                                "description": "Tool to execute",
                             },
                             "parameters": {
                                 "type": "object",
-                                "description": "Parameters for the tool (data will be auto-injected)"
+                                "description": "Parameters for the tool (data will be auto-injected)",
                             },
                             "output_key": {
                                 "type": "string",
-                                "description": "Key to extract data from tool output (auto-detected if not specified)"
-                            }
+                                "description": "Key to extract data from tool output (auto-detected if not specified)",
+                            },
                         },
-                        "required": ["tool", "parameters"]
-                    }
+                        "required": ["tool", "parameters"],
+                    },
                 },
                 "validate_each_step": {
                     "type": "boolean",
                     "description": "Whether to validate data quality at each step",
-                    "default": False
-                }
+                    "default": False,
+                },
             },
-            "required": ["data", "chain"]
+            "required": ["data", "chain"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -75,7 +87,7 @@ class ToolChainExecutor(BaseTool):
             "aggregate_data": AggregateDataTool(),
             "join_data": JoinDataTool(),
             "pivot_data": PivotDataTool(),
-            "clean_data": CleanDataTool()
+            "clean_data": CleanDataTool(),
         }
 
         # Output key mapping for each tool
@@ -84,7 +96,7 @@ class ToolChainExecutor(BaseTool):
             "aggregate_data": "aggregated_data",
             "join_data": "joined_data",
             "pivot_data": "pivoted_data",
-            "clean_data": "cleaned_data"
+            "clean_data": "cleaned_data",
         }
 
         current_data = data
@@ -112,7 +124,9 @@ class ToolChainExecutor(BaseTool):
                 result = await tool.safe_execute(**parameters)
 
                 if not result["success"]:
-                    raise RuntimeError(f"Tool {tool_name} failed at step {i+1}: {result.get('error', 'Unknown error')}")
+                    raise RuntimeError(
+                        f"Tool {tool_name} failed at step {i+1}: {result.get('error', 'Unknown error')}"
+                    )
 
                 # Extract data for next step
                 output_key = custom_output_key or output_keys.get(tool_name)
@@ -123,31 +137,46 @@ class ToolChainExecutor(BaseTool):
                     if "data" in result["result"]:
                         current_data = result["result"]["data"]
                     else:
-                        raise RuntimeError(f"Could not extract data from {tool_name} output")
+                        raise RuntimeError(
+                            f"Could not extract data from {tool_name} output"
+                        )
 
-                step_results.append({
-                    "step": i + 1,
-                    "tool": tool_name,
-                    "parameters": parameters,
-                    "result_summary": {
-                        "success": result["success"],
-                        "records_out": len(current_data) if isinstance(current_data, list) else 1,
-                        "output_key": output_key
-                    },
-                    "validation": result["result"].get("validation") if validate_each_step else None
-                })
+                step_results.append(
+                    {
+                        "step": i + 1,
+                        "tool": tool_name,
+                        "parameters": parameters,
+                        "result_summary": {
+                            "success": result["success"],
+                            "records_out": (
+                                len(current_data)
+                                if isinstance(current_data, list)
+                                else 1
+                            ),
+                            "output_key": output_key,
+                        },
+                        "validation": (
+                            result["result"].get("validation")
+                            if validate_each_step
+                            else None
+                        ),
+                    }
+                )
 
             return {
                 "final_data": current_data,
                 "original_count": len(data),
-                "final_count": len(current_data) if isinstance(current_data, list) else 1,
+                "final_count": (
+                    len(current_data) if isinstance(current_data, list) else 1
+                ),
                 "steps_executed": len(chain),
                 "step_results": step_results,
                 "chain_summary": {
                     "tools_used": [step["tool"] for step in chain],
-                    "data_reduction": len(data) - (len(current_data) if isinstance(current_data, list) else 1),
-                    "success": True
-                }
+                    "data_reduction": len(data)
+                    - (len(current_data) if isinstance(current_data, list) else 1),
+                    "success": True,
+                },
             }
 
         except Exception as e:

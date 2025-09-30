@@ -10,9 +10,15 @@ from unittest.mock import patch
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from tools.data_validation import ValidateSchemaTool, CheckNullsTool, DataQualityReportTool, DetectDuplicatesTool
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+
+from tools.data_validation import (
+    ValidateSchemaTool,
+    CheckNullsTool,
+    DataQualityReportTool,
+    DetectDuplicatesTool,
+)
 
 
 class TestValidateSchemaTool:
@@ -29,7 +35,7 @@ class TestValidateSchemaTool:
         return [
             {"name": "Alice", "age": 25, "email": "alice@example.com"},
             {"name": "Bob", "age": 30, "email": "bob@example.com"},
-            {"name": "Charlie", "age": 35, "email": "charlie@example.com"}
+            {"name": "Charlie", "age": 35, "email": "charlie@example.com"},
         ]
 
     def test_tool_properties(self, tool):
@@ -46,7 +52,7 @@ class TestValidateSchemaTool:
         schema = {
             "name": {"type": "string", "required": True},
             "age": {"type": "integer", "required": True, "min": 0},
-            "email": {"type": "string", "required": True, "pattern": ".*@.*"}
+            "email": {"type": "string", "required": True, "pattern": ".*@.*"},
         }
 
         result = await tool.safe_execute(data=sample_data, schema=schema)
@@ -62,13 +68,13 @@ class TestValidateSchemaTool:
         invalid_data = [
             {"name": "Alice", "age": "invalid_age", "email": "alice@example.com"},
             {"name": "Bob", "age": 30, "email": "invalid_email"},
-            {"name": "", "age": 25, "email": "charlie@example.com"}
+            {"name": "", "age": 25, "email": "charlie@example.com"},
         ]
 
         schema = {
             "name": {"type": "string", "required": True, "min_length": 1},
             "age": {"type": "integer", "required": True},
-            "email": {"type": "string", "required": True, "pattern": ".*@.*"}
+            "email": {"type": "string", "required": True, "pattern": ".*@.*"},
         }
 
         result = await tool.safe_execute(data=invalid_data, schema=schema)
@@ -84,13 +90,13 @@ class TestValidateSchemaTool:
         """Test schema validation with missing required fields."""
         incomplete_data = [
             {"name": "Alice", "age": 25},  # Missing email
-            {"name": "Bob", "email": "bob@example.com"}  # Missing age
+            {"name": "Bob", "email": "bob@example.com"},  # Missing age
         ]
 
         schema = {
             "name": {"type": "string", "required": True},
             "age": {"type": "integer", "required": True},
-            "email": {"type": "string", "required": True}
+            "email": {"type": "string", "required": True},
         }
 
         result = await tool.safe_execute(data=incomplete_data, schema=schema)
@@ -105,7 +111,11 @@ class TestValidateSchemaTool:
         schema = {
             "name": {"type": "string", "required": True, "min_length": 2},
             "age": {"type": "integer", "required": True, "min": 18, "max": 100},
-            "email": {"type": "string", "required": True, "pattern": r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"}
+            "email": {
+                "type": "string",
+                "required": True,
+                "pattern": r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+            },
         }
 
         result = await tool.safe_execute(data=sample_data, schema=schema)
@@ -130,7 +140,7 @@ class TestCheckNullsTool:
             {"name": None, "age": 30, "email": "bob@example.com"},
             {"name": "Charlie", "age": None, "email": None},
             {"name": "", "age": 35, "email": "dave@example.com"},
-            {"name": "Eve", "age": 40, "email": ""}
+            {"name": "Eve", "age": 40, "email": ""},
         ]
 
     def test_tool_properties(self, tool):
@@ -160,24 +170,25 @@ class TestCheckNullsTool:
     @pytest.mark.asyncio
     async def test_check_nulls_include_empty(self, tool, data_with_nulls):
         """Test null checking including empty strings."""
-        result = await tool.safe_execute(
-            data=data_with_nulls,
-            null_values=[""]
-        )
+        result = await tool.safe_execute(data=data_with_nulls, null_values=[""])
 
         assert result["success"] is True
         report = result["result"]
 
         # Should detect empty strings as nulls
-        assert report["field_analysis"]["name"]["null_count"] >= 1  # At least one empty string
-        assert report["field_analysis"]["email"]["null_count"] >= 1  # At least one empty string
+        assert (
+            report["field_analysis"]["name"]["null_count"] >= 1
+        )  # At least one empty string
+        assert (
+            report["field_analysis"]["email"]["null_count"] >= 1
+        )  # At least one empty string
 
     @pytest.mark.asyncio
     async def test_check_nulls_no_nulls(self, tool):
         """Test null checking with clean data."""
         clean_data = [
             {"name": "Alice", "age": 25, "email": "alice@example.com"},
-            {"name": "Bob", "age": 30, "email": "bob@example.com"}
+            {"name": "Bob", "age": 30, "email": "bob@example.com"},
         ]
 
         result = await tool.safe_execute(data=clean_data)
@@ -186,14 +197,15 @@ class TestCheckNullsTool:
         report = result["result"]
 
         # Should have no nulls
-        assert all(report["field_analysis"][field]["null_count"] == 0 for field in report["field_analysis"])
+        assert all(
+            report["field_analysis"][field]["null_count"] == 0
+            for field in report["field_analysis"]
+        )
 
     @pytest.mark.asyncio
     async def test_check_nulls_patterns(self, tool, data_with_nulls):
         """Test null pattern analysis."""
-        result = await tool.safe_execute(
-            data=data_with_nulls
-        )
+        result = await tool.safe_execute(data=data_with_nulls)
 
         assert result["success"] is True
         report = result["result"]
@@ -214,12 +226,36 @@ class TestDataQualityReportTool:
     def mixed_quality_data(self):
         """Create test data with various quality issues."""
         return [
-            {"id": 1, "name": "Alice", "age": 25, "email": "alice@example.com", "score": 95.5},
-            {"id": 2, "name": "Bob", "age": 30, "email": "bob@example.com", "score": 87.2},
+            {
+                "id": 1,
+                "name": "Alice",
+                "age": 25,
+                "email": "alice@example.com",
+                "score": 95.5,
+            },
+            {
+                "id": 2,
+                "name": "Bob",
+                "age": 30,
+                "email": "bob@example.com",
+                "score": 87.2,
+            },
             {"id": 3, "name": None, "age": 35, "email": "invalid-email", "score": None},
-            {"id": 4, "name": "Dave", "age": -5, "email": "dave@example.com", "score": 150.0},
+            {
+                "id": 4,
+                "name": "Dave",
+                "age": -5,
+                "email": "dave@example.com",
+                "score": 150.0,
+            },
             {"id": 5, "name": "", "age": 200, "email": "", "score": -10.0},
-            {"id": 1, "name": "Alice", "age": 25, "email": "alice@example.com", "score": 95.5}  # Duplicate
+            {
+                "id": 1,
+                "name": "Alice",
+                "age": 25,
+                "email": "alice@example.com",
+                "score": 95.5,
+            },  # Duplicate
         ]
 
     def test_tool_properties(self, tool):
@@ -254,12 +290,10 @@ class TestDataQualityReportTool:
         rules = {
             "age": {"min": 0, "max": 120},
             "score": {"min": 0, "max": 100},
-            "email": {"pattern": r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"}
+            "email": {"pattern": r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"},
         }
 
-        result = await tool.safe_execute(
-            data=mixed_quality_data
-        )
+        result = await tool.safe_execute(data=mixed_quality_data)
 
         assert result["success"] is True
         report = result["result"]
@@ -270,9 +304,7 @@ class TestDataQualityReportTool:
     @pytest.mark.asyncio
     async def test_data_quality_detailed_analysis(self, tool, mixed_quality_data):
         """Test detailed data quality analysis."""
-        result = await tool.safe_execute(
-            data=mixed_quality_data
-        )
+        result = await tool.safe_execute(data=mixed_quality_data)
 
         assert result["success"] is True
         report = result["result"]
@@ -311,8 +343,16 @@ class TestDetectDuplicatesTool:
             {"id": 2, "name": "Bob", "email": "bob@example.com"},
             {"id": 1, "name": "Alice", "email": "alice@example.com"},  # Exact duplicate
             {"id": 4, "name": "Charlie", "email": "charlie@example.com"},
-            {"id": 5, "name": "Bob", "email": "bob2@example.com"},  # Partial duplicate (name)
-            {"id": 6, "name": "Dave", "email": "alice@example.com"}  # Partial duplicate (email)
+            {
+                "id": 5,
+                "name": "Bob",
+                "email": "bob2@example.com",
+            },  # Partial duplicate (name)
+            {
+                "id": 6,
+                "name": "Dave",
+                "email": "alice@example.com",
+            },  # Partial duplicate (email)
         ]
 
     def test_tool_properties(self, tool):
@@ -341,10 +381,7 @@ class TestDetectDuplicatesTool:
     @pytest.mark.asyncio
     async def test_detect_duplicates_by_columns(self, tool, data_with_duplicates):
         """Test duplicate detection by specific columns."""
-        result = await tool.safe_execute(
-            data=data_with_duplicates,
-            key_fields=["name"]
-        )
+        result = await tool.safe_execute(data=data_with_duplicates, key_fields=["name"])
 
         assert result["success"] is True
         report = result["result"]
@@ -355,9 +392,7 @@ class TestDetectDuplicatesTool:
     @pytest.mark.asyncio
     async def test_detect_duplicates_keep_option(self, tool, data_with_duplicates):
         """Test duplicate detection with different keep options."""
-        result = await tool.safe_execute(
-            data=data_with_duplicates
-        )
+        result = await tool.safe_execute(data=data_with_duplicates)
 
         assert result["success"] is True
         report = result["result"]
@@ -371,7 +406,7 @@ class TestDetectDuplicatesTool:
         unique_data = [
             {"id": 1, "name": "Alice", "email": "alice@example.com"},
             {"id": 2, "name": "Bob", "email": "bob@example.com"},
-            {"id": 3, "name": "Charlie", "email": "charlie@example.com"}
+            {"id": 3, "name": "Charlie", "email": "charlie@example.com"},
         ]
 
         result = await tool.safe_execute(data=unique_data)
@@ -389,12 +424,10 @@ class TestDetectDuplicatesTool:
         similar_data = [
             {"name": "John Smith", "email": "john@example.com"},
             {"name": "Jon Smith", "email": "jon@example.com"},  # Similar name
-            {"name": "Jane Doe", "email": "jane@example.com"}
+            {"name": "Jane Doe", "email": "jane@example.com"},
         ]
 
-        result = await tool.safe_execute(
-            data=similar_data
-        )
+        result = await tool.safe_execute(data=similar_data)
 
         assert result["success"] is True
         report = result["result"]

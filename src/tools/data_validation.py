@@ -21,14 +21,16 @@ class ValidateSchemaTool(BaseTool):
 
     @property
     def description(self) -> str:
-        return "Validate data against expected schema with type checking and constraints"
+        return (
+            "Validate data against expected schema with type checking and constraints"
+        )
 
     def get_schema(self) -> Dict:
         return {
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to validate (list of dictionaries)"
+                    "description": "Data to validate (list of dictionaries)",
                 },
                 "schema": {
                     "type": "object",
@@ -40,23 +42,33 @@ class ValidateSchemaTool(BaseTool):
                             "additionalProperties": {
                                 "type": "object",
                                 "properties": {
-                                    "type": {"type": "string", "enum": ["string", "integer", "float", "boolean", "date", "datetime"]},
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "string",
+                                            "integer",
+                                            "float",
+                                            "boolean",
+                                            "date",
+                                            "datetime",
+                                        ],
+                                    },
                                     "required": {"type": "boolean", "default": True},
                                     "min_length": {"type": "integer"},
                                     "max_length": {"type": "integer"},
                                     "min_value": {"type": "number"},
                                     "max_value": {"type": "number"},
                                     "allowed_values": {"type": "array"},
-                                    "pattern": {"type": "string"}
+                                    "pattern": {"type": "string"},
                                 },
-                                "required": ["type"]
-                            }
+                                "required": ["type"],
+                            },
                         }
                     },
-                    "required": ["fields"]
-                }
+                    "required": ["fields"],
+                },
             },
-            "required": ["data", "schema"]
+            "required": ["data", "schema"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -81,7 +93,7 @@ class ValidateSchemaTool(BaseTool):
             "invalid_records": 0,
             "validation_errors": [],
             "field_statistics": {},
-            "overall_valid": True
+            "overall_valid": True,
         }
 
         # Validate each record
@@ -94,38 +106,48 @@ class ValidateSchemaTool(BaseTool):
                 validation_results["valid_records"] += 1
 
         # Generate field statistics
-        validation_results["field_statistics"] = self._generate_field_statistics(data, field_definitions)
+        validation_results["field_statistics"] = self._generate_field_statistics(
+            data, field_definitions
+        )
 
         # Overall validation status
         validation_results["overall_valid"] = validation_results["invalid_records"] == 0
 
         return validation_results
 
-    def _validate_record(self, record: Dict, field_definitions: Dict, record_index: int) -> List[Dict]:
+    def _validate_record(
+        self, record: Dict, field_definitions: Dict, record_index: int
+    ) -> List[Dict]:
         """Validate a single record against the schema."""
         errors = []
 
         # Check for required fields
         for field_name, field_def in field_definitions.items():
             if field_def.get("required", True) and field_name not in record:
-                errors.append({
-                    "record_index": record_index,
-                    "field": field_name,
-                    "error_type": "missing_field",
-                    "message": f"Required field '{field_name}' is missing"
-                })
+                errors.append(
+                    {
+                        "record_index": record_index,
+                        "field": field_name,
+                        "error_type": "missing_field",
+                        "message": f"Required field '{field_name}' is missing",
+                    }
+                )
                 continue
 
             if field_name not in record:
                 continue  # Skip optional missing fields
 
             value = record[field_name]
-            field_errors = self._validate_field_value(value, field_def, field_name, record_index)
+            field_errors = self._validate_field_value(
+                value, field_def, field_name, record_index
+            )
             errors.extend(field_errors)
 
         return errors
 
-    def _validate_field_value(self, value: Any, field_def: Dict, field_name: str, record_index: int) -> List[Dict]:
+    def _validate_field_value(
+        self, value: Any, field_def: Dict, field_name: str, record_index: int
+    ) -> List[Dict]:
         """Validate a single field value."""
         errors = []
         field_type = field_def["type"]
@@ -133,28 +155,34 @@ class ValidateSchemaTool(BaseTool):
         # Handle null values
         if value is None or value == "":
             if field_def.get("required", True):
-                errors.append({
-                    "record_index": record_index,
-                    "field": field_name,
-                    "error_type": "null_value",
-                    "message": f"Field '{field_name}' cannot be null"
-                })
+                errors.append(
+                    {
+                        "record_index": record_index,
+                        "field": field_name,
+                        "error_type": "null_value",
+                        "message": f"Field '{field_name}' cannot be null",
+                    }
+                )
             return errors
 
         # Type validation
         try:
             converted_value = self._convert_and_validate_type(value, field_type)
         except (ValueError, TypeError) as e:
-            errors.append({
-                "record_index": record_index,
-                "field": field_name,
-                "error_type": "type_error",
-                "message": f"Field '{field_name}' type error: {str(e)}"
-            })
+            errors.append(
+                {
+                    "record_index": record_index,
+                    "field": field_name,
+                    "error_type": "type_error",
+                    "message": f"Field '{field_name}' type error: {str(e)}",
+                }
+            )
             return errors
 
         # Constraint validation
-        constraint_errors = self._validate_constraints(converted_value, field_def, field_name, record_index)
+        constraint_errors = self._validate_constraints(
+            converted_value, field_def, field_name, record_index
+        )
         errors.extend(constraint_errors)
 
         return errors
@@ -190,69 +218,89 @@ class ValidateSchemaTool(BaseTool):
         elif expected_type == "datetime":
             if isinstance(value, str):
                 # Try common datetime formats
-                formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"]
+                formats = [
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%dT%H:%M:%S",
+                    "%Y-%m-%d %H:%M:%S.%f",
+                ]
                 for fmt in formats:
                     try:
                         return datetime.strptime(value, fmt)
                     except ValueError:
                         continue
-                raise ValueError(f"Datetime '{value}' does not match any expected format")
+                raise ValueError(
+                    f"Datetime '{value}' does not match any expected format"
+                )
             raise ValueError("Datetime must be a string")
         else:
             raise ValueError(f"Unknown type: {expected_type}")
 
-    def _validate_constraints(self, value: Any, field_def: Dict, field_name: str, record_index: int) -> List[Dict]:
+    def _validate_constraints(
+        self, value: Any, field_def: Dict, field_name: str, record_index: int
+    ) -> List[Dict]:
         """Validate field constraints."""
         errors = []
 
         # String length constraints
         if isinstance(value, str):
             if "min_length" in field_def and len(value) < field_def["min_length"]:
-                errors.append({
-                    "record_index": record_index,
-                    "field": field_name,
-                    "error_type": "min_length",
-                    "message": f"Field '{field_name}' length {len(value)} is less than minimum {field_def['min_length']}"
-                })
+                errors.append(
+                    {
+                        "record_index": record_index,
+                        "field": field_name,
+                        "error_type": "min_length",
+                        "message": f"Field '{field_name}' length {len(value)} is less than minimum {field_def['min_length']}",
+                    }
+                )
 
             if "max_length" in field_def and len(value) > field_def["max_length"]:
-                errors.append({
-                    "record_index": record_index,
-                    "field": field_name,
-                    "error_type": "max_length",
-                    "message": f"Field '{field_name}' length {len(value)} exceeds maximum {field_def['max_length']}"
-                })
+                errors.append(
+                    {
+                        "record_index": record_index,
+                        "field": field_name,
+                        "error_type": "max_length",
+                        "message": f"Field '{field_name}' length {len(value)} exceeds maximum {field_def['max_length']}",
+                    }
+                )
 
         # Numeric constraints
         if isinstance(value, (int, float)):
             if "min_value" in field_def and value < field_def["min_value"]:
-                errors.append({
-                    "record_index": record_index,
-                    "field": field_name,
-                    "error_type": "min_value",
-                    "message": f"Field '{field_name}' value {value} is less than minimum {field_def['min_value']}"
-                })
+                errors.append(
+                    {
+                        "record_index": record_index,
+                        "field": field_name,
+                        "error_type": "min_value",
+                        "message": f"Field '{field_name}' value {value} is less than minimum {field_def['min_value']}",
+                    }
+                )
 
             if "max_value" in field_def and value > field_def["max_value"]:
-                errors.append({
-                    "record_index": record_index,
-                    "field": field_name,
-                    "error_type": "max_value",
-                    "message": f"Field '{field_name}' value {value} exceeds maximum {field_def['max_value']}"
-                })
+                errors.append(
+                    {
+                        "record_index": record_index,
+                        "field": field_name,
+                        "error_type": "max_value",
+                        "message": f"Field '{field_name}' value {value} exceeds maximum {field_def['max_value']}",
+                    }
+                )
 
         # Allowed values constraint
         if "allowed_values" in field_def and value not in field_def["allowed_values"]:
-            errors.append({
-                "record_index": record_index,
-                "field": field_name,
-                "error_type": "invalid_value",
-                "message": f"Field '{field_name}' value '{value}' is not in allowed values: {field_def['allowed_values']}"
-            })
+            errors.append(
+                {
+                    "record_index": record_index,
+                    "field": field_name,
+                    "error_type": "invalid_value",
+                    "message": f"Field '{field_name}' value '{value}' is not in allowed values: {field_def['allowed_values']}",
+                }
+            )
 
         return errors
 
-    def _generate_field_statistics(self, data: List[Dict], field_definitions: Dict) -> Dict:
+    def _generate_field_statistics(
+        self, data: List[Dict], field_definitions: Dict
+    ) -> Dict:
         """Generate statistics for each field."""
         statistics = {}
 
@@ -264,12 +312,19 @@ class ValidateSchemaTool(BaseTool):
                 "total_count": len(field_values),
                 "non_null_count": len(non_null_values),
                 "null_count": len(field_values) - len(non_null_values),
-                "null_percentage": ((len(field_values) - len(non_null_values)) / len(field_values)) * 100 if field_values else 0
+                "null_percentage": (
+                    ((len(field_values) - len(non_null_values)) / len(field_values))
+                    * 100
+                    if field_values
+                    else 0
+                ),
             }
 
             if non_null_values:
                 stats["unique_count"] = len(set(non_null_values))
-                stats["unique_percentage"] = (stats["unique_count"] / len(non_null_values)) * 100
+                stats["unique_percentage"] = (
+                    stats["unique_count"] / len(non_null_values)
+                ) * 100
 
             statistics[field_name] = stats
 
@@ -292,16 +347,16 @@ class CheckNullsTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to analyze (list of dictionaries)"
+                    "description": "Data to analyze (list of dictionaries)",
                 },
                 "null_values": {
                     "type": "array",
                     "description": "Additional values to treat as null (e.g., ['', 'N/A', 'NULL'])",
                     "items": {"type": "string"},
-                    "default": ["", "null", "NULL", "None", "N/A", "n/a", "#N/A"]
-                }
+                    "default": ["", "null", "NULL", "None", "N/A", "n/a", "#N/A"],
+                },
             },
-            "required": ["data"]
+            "required": ["data"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -329,7 +384,7 @@ class CheckNullsTool(BaseTool):
             "total_fields": len(df.columns),
             "field_analysis": {},
             "summary": {},
-            "patterns": {}
+            "patterns": {},
         }
 
         # Analyze each field
@@ -356,8 +411,12 @@ class CheckNullsTool(BaseTool):
             "total_count": total_count,
             "null_count": int(null_count),
             "non_null_count": int(non_null_count),
-            "null_percentage": (null_count / total_count) * 100 if total_count > 0 else 0,
-            "null_severity": self._classify_null_severity(null_count / total_count if total_count > 0 else 0)
+            "null_percentage": (
+                (null_count / total_count) * 100 if total_count > 0 else 0
+            ),
+            "null_severity": self._classify_null_severity(
+                null_count / total_count if total_count > 0 else 0
+            ),
         }
 
         # Find null positions
@@ -395,11 +454,17 @@ class CheckNullsTool(BaseTool):
         return {
             "total_cells": int(total_cells),
             "total_nulls": int(total_nulls),
-            "overall_null_percentage": (total_nulls / total_cells) * 100 if total_cells > 0 else 0,
+            "overall_null_percentage": (
+                (total_nulls / total_cells) * 100 if total_cells > 0 else 0
+            ),
             "fields_with_nulls": int(fields_with_nulls),
             "fields_all_null": int(fields_all_null),
             "fields_no_nulls": int(fields_no_nulls),
-            "completeness_score": ((total_cells - total_nulls) / total_cells) * 100 if total_cells > 0 else 0
+            "completeness_score": (
+                ((total_cells - total_nulls) / total_cells) * 100
+                if total_cells > 0
+                else 0
+            ),
         }
 
     def _identify_null_patterns(self, df: pd.DataFrame) -> Dict:
@@ -410,14 +475,14 @@ class CheckNullsTool(BaseTool):
         complete_records = (~df.isnull().any(axis=1)).sum()
         patterns["complete_records"] = {
             "count": int(complete_records),
-            "percentage": (complete_records / len(df)) * 100 if len(df) > 0 else 0
+            "percentage": (complete_records / len(df)) * 100 if len(df) > 0 else 0,
         }
 
         # Records with all nulls
         empty_records = df.isnull().all(axis=1).sum()
         patterns["empty_records"] = {
             "count": int(empty_records),
-            "percentage": (empty_records / len(df)) * 100 if len(df) > 0 else 0
+            "percentage": (empty_records / len(df)) * 100 if len(df) > 0 else 0,
         }
 
         # Most common null combinations (get all, let LLM decide how many to use)
@@ -427,15 +492,16 @@ class CheckNullsTool(BaseTool):
         for combo, count in null_combinations.items():
             if isinstance(combo, tuple):
                 # Handle tuple case (when multiple columns)
-                null_fields = [df.columns[i] for i, is_null in enumerate(combo) if is_null]
+                null_fields = [
+                    df.columns[i] for i, is_null in enumerate(combo) if is_null
+                ]
             else:
                 # Handle single boolean case
                 null_fields = [df.columns[0]] if combo else []
 
-            patterns["common_null_combinations"].append({
-                "fields": null_fields,
-                "count": int(count)
-            })
+            patterns["common_null_combinations"].append(
+                {"fields": null_fields, "count": int(count)}
+            )
 
         return patterns
 
@@ -456,21 +522,21 @@ class DataQualityReportTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to analyze (list of dictionaries)"
+                    "description": "Data to analyze (list of dictionaries)",
                 },
                 "include_samples": {
                     "type": "boolean",
                     "description": "Include sample data in the report",
-                    "default": True
+                    "default": True,
                 },
                 "sample_size": {
                     "type": "integer",
                     "description": "Number of sample records to include",
                     "default": 5,
-                    "minimum": 1
-                }
+                    "minimum": 1,
+                },
             },
-            "required": ["data"]
+            "required": ["data"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -493,13 +559,17 @@ class DataQualityReportTool(BaseTool):
             "data_quality_score": 0,
             "issues": [],
             "recommendations": [],
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         if include_samples:
             report["samples"] = {
-                "first_records": data[:min(sample_size, len(data))],
-                "random_records": df.sample(min(sample_size, len(df))).to_dict(orient="records") if len(df) >= sample_size else []
+                "first_records": data[: min(sample_size, len(data))],
+                "random_records": (
+                    df.sample(min(sample_size, len(df))).to_dict(orient="records")
+                    if len(df) >= sample_size
+                    else []
+                ),
             }
 
         # Calculate overall quality score
@@ -518,7 +588,7 @@ class DataQualityReportTool(BaseTool):
             "total_fields": len(df.columns),
             "memory_usage_mb": df.memory_usage(deep=True).sum() / (1024 * 1024),
             "data_types": df.dtypes.value_counts().to_dict(),
-            "shape": list(df.shape)
+            "shape": list(df.shape),
         }
 
     def _analyze_fields(self, df: pd.DataFrame) -> Dict:
@@ -534,13 +604,17 @@ class DataQualityReportTool(BaseTool):
                 "null_count": int(series.isnull().sum()),
                 "null_percentage": (series.isnull().sum() / len(series)) * 100,
                 "unique_count": int(series.nunique()),
-                "unique_percentage": (series.nunique() / len(series)) * 100 if len(series) > 0 else 0
+                "unique_percentage": (
+                    (series.nunique() / len(series)) * 100 if len(series) > 0 else 0
+                ),
             }
 
             # Type-specific analysis
             if pd.api.types.is_numeric_dtype(series):
                 analysis.update(self._analyze_numeric_field(series))
-            elif pd.api.types.is_string_dtype(series) or pd.api.types.is_object_dtype(series):
+            elif pd.api.types.is_string_dtype(series) or pd.api.types.is_object_dtype(
+                series
+            ):
                 analysis.update(self._analyze_text_field(series))
             elif pd.api.types.is_datetime64_any_dtype(series):
                 analysis.update(self._analyze_datetime_field(series))
@@ -564,11 +638,11 @@ class DataQualityReportTool(BaseTool):
                 "median": float(non_null_series.median()),
                 "std": float(non_null_series.std()) if len(non_null_series) > 1 else 0,
                 "q25": float(non_null_series.quantile(0.25)),
-                "q75": float(non_null_series.quantile(0.75))
+                "q75": float(non_null_series.quantile(0.75)),
             },
             "outliers": self._detect_outliers(non_null_series),
             "zeros_count": int((non_null_series == 0).sum()),
-            "negative_count": int((non_null_series < 0).sum())
+            "negative_count": int((non_null_series < 0).sum()),
         }
 
         return stats
@@ -588,10 +662,10 @@ class DataQualityReportTool(BaseTool):
                 "max_length": int(lengths.max()),
                 "avg_length": float(lengths.mean()),
                 "empty_strings": int((non_null_series == "").sum()),
-                "whitespace_only": int(non_null_series.str.strip().eq("").sum())
+                "whitespace_only": int(non_null_series.str.strip().eq("").sum()),
             },
             "top_values": non_null_series.value_counts().to_dict(),
-            "patterns": self._analyze_text_patterns(non_null_series)
+            "patterns": self._analyze_text_patterns(non_null_series),
         }
 
         return stats
@@ -607,8 +681,8 @@ class DataQualityReportTool(BaseTool):
             "statistics": {
                 "min_date": non_null_series.min().isoformat(),
                 "max_date": non_null_series.max().isoformat(),
-                "date_range_days": (non_null_series.max() - non_null_series.min()).days
-            }
+                "date_range_days": (non_null_series.max() - non_null_series.min()).days,
+            },
         }
 
         return stats
@@ -627,7 +701,7 @@ class DataQualityReportTool(BaseTool):
             "count": len(outliers),
             "percentage": (len(outliers) / len(series)) * 100,
             "lower_bound": float(lower_bound),
-            "upper_bound": float(upper_bound)
+            "upper_bound": float(upper_bound),
         }
 
     def _analyze_text_patterns(self, series: pd.Series) -> Dict:
@@ -636,8 +710,10 @@ class DataQualityReportTool(BaseTool):
             "all_uppercase": int(series.str.isupper().sum()),
             "all_lowercase": int(series.str.islower().sum()),
             "mixed_case": int((~series.str.isupper() & ~series.str.islower()).sum()),
-            "contains_numbers": int(series.str.contains(r'\d', na=False).sum()),
-            "contains_special_chars": int(series.str.contains(r'[^\w\s]', na=False).sum())
+            "contains_numbers": int(series.str.contains(r"\d", na=False).sum()),
+            "contains_special_chars": int(
+                series.str.contains(r"[^\w\s]", na=False).sum()
+            ),
         }
 
         return patterns
@@ -664,7 +740,9 @@ class DataQualityReportTool(BaseTool):
 
             # Type-specific penalties
             if analysis.get("analysis_type") == "numeric":
-                outlier_penalty = analysis.get("outliers", {}).get("percentage", 0) * 0.3
+                outlier_penalty = (
+                    analysis.get("outliers", {}).get("percentage", 0) * 0.3
+                )
                 field_score -= outlier_penalty
 
             field_score = max(0, field_score)  # Ensure non-negative
@@ -680,32 +758,40 @@ class DataQualityReportTool(BaseTool):
         for field_name, analysis in field_analysis.items():
             # High null percentage
             if analysis["null_percentage"] > 20:
-                issues.append({
-                    "field": field_name,
-                    "type": "high_null_percentage",
-                    "severity": "high" if analysis["null_percentage"] > 50 else "medium",
-                    "description": f"Field has {analysis['null_percentage']:.1f}% null values"
-                })
+                issues.append(
+                    {
+                        "field": field_name,
+                        "type": "high_null_percentage",
+                        "severity": (
+                            "high" if analysis["null_percentage"] > 50 else "medium"
+                        ),
+                        "description": f"Field has {analysis['null_percentage']:.1f}% null values",
+                    }
+                )
 
             # Low uniqueness
             if analysis["unique_percentage"] < 5 and analysis["unique_count"] > 1:
-                issues.append({
-                    "field": field_name,
-                    "type": "low_uniqueness",
-                    "severity": "medium",
-                    "description": f"Field has only {analysis['unique_percentage']:.1f}% unique values"
-                })
+                issues.append(
+                    {
+                        "field": field_name,
+                        "type": "low_uniqueness",
+                        "severity": "medium",
+                        "description": f"Field has only {analysis['unique_percentage']:.1f}% unique values",
+                    }
+                )
 
             # Outliers in numeric fields
             if analysis.get("analysis_type") == "numeric":
                 outlier_info = analysis.get("outliers", {})
                 if outlier_info.get("percentage", 0) > 5:
-                    issues.append({
-                        "field": field_name,
-                        "type": "outliers",
-                        "severity": "low",
-                        "description": f"Field has {outlier_info['percentage']:.1f}% outliers"
-                    })
+                    issues.append(
+                        {
+                            "field": field_name,
+                            "type": "outliers",
+                            "severity": "low",
+                            "description": f"Field has {outlier_info['percentage']:.1f}% outliers",
+                        }
+                    )
 
         return issues
 
@@ -715,19 +801,29 @@ class DataQualityReportTool(BaseTool):
         issues = report["issues"]
 
         if any(issue["type"] == "high_null_percentage" for issue in issues):
-            recommendations.append("Consider investigating the source of null values and implement data collection improvements")
+            recommendations.append(
+                "Consider investigating the source of null values and implement data collection improvements"
+            )
 
         if any(issue["type"] == "low_uniqueness" for issue in issues):
-            recommendations.append("Review fields with low uniqueness for potential data entry errors or missing normalization")
+            recommendations.append(
+                "Review fields with low uniqueness for potential data entry errors or missing normalization"
+            )
 
         if any(issue["type"] == "outliers" for issue in issues):
-            recommendations.append("Investigate outliers to determine if they represent data errors or legitimate extreme values")
+            recommendations.append(
+                "Investigate outliers to determine if they represent data errors or legitimate extreme values"
+            )
 
         if report["data_quality_score"] < 70:
-            recommendations.append("Overall data quality score is below acceptable threshold - consider comprehensive data cleaning")
+            recommendations.append(
+                "Overall data quality score is below acceptable threshold - consider comprehensive data cleaning"
+            )
 
         if not recommendations:
-            recommendations.append("Data quality appears good - maintain current data collection and validation processes")
+            recommendations.append(
+                "Data quality appears good - maintain current data collection and validation processes"
+            )
 
         return recommendations
 
@@ -748,31 +844,31 @@ class DetectDuplicatesTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to analyze (list of dictionaries)"
+                    "description": "Data to analyze (list of dictionaries)",
                 },
                 "key_fields": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Fields to use for duplicate detection (if not provided, all fields are used)"
+                    "description": "Fields to use for duplicate detection (if not provided, all fields are used)",
                 },
                 "ignore_fields": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Fields to ignore during duplicate detection",
-                    "default": []
+                    "default": [],
                 },
                 "case_sensitive": {
                     "type": "boolean",
                     "description": "Whether string comparison should be case sensitive",
-                    "default": False
+                    "default": False,
                 },
                 "include_duplicates": {
                     "type": "boolean",
                     "description": "Include actual duplicate records in the response",
-                    "default": True
-                }
+                    "default": True,
+                },
             },
-            "required": ["data"]
+            "required": ["data"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -807,7 +903,7 @@ class DetectDuplicatesTool(BaseTool):
         # Handle case sensitivity for string fields
         if not case_sensitive:
             for field in comparison_fields:
-                if comparison_df[field].dtype == 'object':
+                if comparison_df[field].dtype == "object":
                     comparison_df[field] = comparison_df[field].astype(str).str.lower()
 
         # Find duplicates
@@ -826,24 +922,28 @@ class DetectDuplicatesTool(BaseTool):
             "total_records": len(df),
             "unique_records": len(df) - len(duplicate_indices),
             "duplicate_records": len(duplicate_indices),
-            "duplicate_percentage": (len(duplicate_indices) / len(df)) * 100 if len(df) > 0 else 0,
+            "duplicate_percentage": (
+                (len(duplicate_indices) / len(df)) * 100 if len(df) > 0 else 0
+            ),
             "duplicate_groups_count": len(duplicate_groups),
             "comparison_fields": comparison_fields,
             "analysis_settings": {
                 "key_fields": key_fields,
                 "ignore_fields": ignore_fields,
-                "case_sensitive": case_sensitive
-            }
+                "case_sensitive": case_sensitive,
+            },
         }
 
         if include_duplicates and duplicate_groups:
             result["duplicate_groups"] = []
-            for i, group_indices in enumerate(duplicate_groups):  # Include all duplicate groups
+            for i, group_indices in enumerate(
+                duplicate_groups
+            ):  # Include all duplicate groups
                 group_data = {
                     "group_id": i + 1,
                     "record_count": len(group_indices),
                     "record_indices": group_indices,
-                    "records": [data[idx] for idx in group_indices]
+                    "records": [data[idx] for idx in group_indices],
                 }
                 result["duplicate_groups"].append(group_data)
 
@@ -861,14 +961,24 @@ class DetectDuplicatesTool(BaseTool):
         if duplicate_percentage == 0:
             recommendations.append("No duplicates found - data appears to be clean")
         elif duplicate_percentage < 5:
-            recommendations.append("Low level of duplicates detected - review and remove as needed")
+            recommendations.append(
+                "Low level of duplicates detected - review and remove as needed"
+            )
         elif duplicate_percentage < 20:
-            recommendations.append("Moderate level of duplicates - implement deduplication process")
+            recommendations.append(
+                "Moderate level of duplicates - implement deduplication process"
+            )
         else:
-            recommendations.append("High level of duplicates - investigate data collection process and implement comprehensive deduplication")
+            recommendations.append(
+                "High level of duplicates - investigate data collection process and implement comprehensive deduplication"
+            )
 
         if result["duplicate_groups_count"] > 0:
-            recommendations.append("Review duplicate groups to determine appropriate merge or removal strategy")
-            recommendations.append("Consider implementing unique constraints or validation rules to prevent future duplicates")
+            recommendations.append(
+                "Review duplicate groups to determine appropriate merge or removal strategy"
+            )
+            recommendations.append(
+                "Consider implementing unique constraints or validation rules to prevent future duplicates"
+            )
 
         return recommendations

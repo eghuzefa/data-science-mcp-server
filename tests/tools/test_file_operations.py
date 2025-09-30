@@ -13,9 +13,15 @@ import pandas as pd
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from tools.file_operations import ReadFileTool, WriteFileTool, ListFilesTool, FileInfoTool
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+
+from tools.file_operations import (
+    ReadFileTool,
+    WriteFileTool,
+    ListFilesTool,
+    FileInfoTool,
+)
 
 
 class TestReadFileTool:
@@ -61,10 +67,10 @@ class TestReadFileTool:
         test_data = [
             ["name", "age", "city"],
             ["Alice", "25", "New York"],
-            ["Bob", "30", "San Francisco"]
+            ["Bob", "30", "San Francisco"],
         ]
 
-        with open(csv_path, 'w', newline='') as f:
+        with open(csv_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(test_data)
 
@@ -81,13 +87,10 @@ class TestReadFileTool:
         # Create test JSON file
         json_path = os.path.join(temp_dir, "test.json")
         test_data = {
-            "users": [
-                {"name": "Alice", "age": 25},
-                {"name": "Bob", "age": 30}
-            ]
+            "users": [{"name": "Alice", "age": 25}, {"name": "Bob", "age": 30}]
         }
 
-        with open(json_path, 'w') as f:
+        with open(json_path, "w") as f:
             json.dump(test_data, f)
 
         result = await tool.safe_execute(file_path=json_path, file_type="json")
@@ -100,7 +103,7 @@ class TestReadFileTool:
         """Test automatic file type detection."""
         # Create test CSV file with .csv extension
         csv_path = os.path.join(temp_dir, "autodetect.csv")
-        with open(csv_path, 'w', newline='') as f:
+        with open(csv_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerows([["col1", "col2"], ["val1", "val2"]])
 
@@ -122,13 +125,11 @@ class TestReadFileTool:
         """Test reading with custom options."""
         # Create CSV with semicolon delimiter
         csv_path = os.path.join(temp_dir, "custom.csv")
-        with open(csv_path, 'w') as f:
+        with open(csv_path, "w") as f:
             f.write("name;age\nAlice;25\nBob;30")
 
         result = await tool.safe_execute(
-            file_path=csv_path,
-            file_type="csv",
-            options={"delimiter": ";"}
+            file_path=csv_path, file_type="csv", options={"delimiter": ";"}
         )
 
         assert result["success"] is True
@@ -139,16 +140,14 @@ class TestReadFileTool:
         """Test reading large files with row limits."""
         # Create large CSV file
         csv_path = os.path.join(temp_dir, "large.csv")
-        with open(csv_path, 'w', newline='') as f:
+        with open(csv_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["id", "value"])
             for i in range(1000):
                 writer.writerow([i, f"value_{i}"])
 
         result = await tool.safe_execute(
-            file_path=csv_path,
-            file_type="csv",
-            options={"nrows": 10}
+            file_path=csv_path, file_type="csv", options={"nrows": 10}
         )
 
         assert result["success"] is True
@@ -181,22 +180,17 @@ class TestWriteFileTool:
     async def test_write_csv_file(self, tool, temp_dir):
         """Test writing CSV files."""
         csv_path = os.path.join(temp_dir, "output.csv")
-        test_data = [
-            {"name": "Alice", "age": 25},
-            {"name": "Bob", "age": 30}
-        ]
+        test_data = [{"name": "Alice", "age": 25}, {"name": "Bob", "age": 30}]
 
         result = await tool.safe_execute(
-            file_path=csv_path,
-            data=test_data,
-            file_type="csv"
+            file_path=csv_path, data=test_data, file_type="csv"
         )
 
         assert result["success"] is True
         assert os.path.exists(csv_path)
 
         # Verify file contents
-        with open(csv_path, 'r') as f:
+        with open(csv_path, "r") as f:
             content = f.read()
             assert "Alice" in content
             assert "Bob" in content
@@ -208,16 +202,14 @@ class TestWriteFileTool:
         test_data = {"users": [{"name": "Alice", "age": 25}]}
 
         result = await tool.safe_execute(
-            file_path=json_path,
-            data=test_data,
-            file_type="json"
+            file_path=json_path, data=test_data, file_type="json"
         )
 
         assert result["success"] is True
         assert os.path.exists(json_path)
 
         # Verify file contents
-        with open(json_path, 'r') as f:
+        with open(json_path, "r") as f:
             loaded_data = json.load(f)
             assert loaded_data == test_data
 
@@ -228,9 +220,7 @@ class TestWriteFileTool:
         test_data = {"test": "data"}
 
         result = await tool.safe_execute(
-            file_path=json_path,
-            data=test_data,
-            file_type="auto"
+            file_path=json_path, data=test_data, file_type="auto"
         )
 
         assert result["success"] is True
@@ -242,7 +232,7 @@ class TestWriteFileTool:
         result = await tool.safe_execute(
             file_path="/invalid/directory/file.csv",
             data=[{"test": "data"}],
-            file_type="csv"
+            file_type="csv",
         )
 
         assert result["success"] is False
@@ -258,7 +248,7 @@ class TestWriteFileTool:
             file_path=csv_path,
             data=test_data,
             file_type="csv",
-            options={"index": False}
+            options={"index": False},
         )
 
         assert result["success"] is True
@@ -308,10 +298,7 @@ class TestListFilesTool:
     @pytest.mark.asyncio
     async def test_list_files_with_filter(self, tool, temp_dir):
         """Test file listing with extension filter."""
-        result = await tool.safe_execute(
-            directory=temp_dir,
-            pattern="*.csv"
-        )
+        result = await tool.safe_execute(directory=temp_dir, pattern="*.csv")
 
         assert result["success"] is True
         files = result["result"]["files"]
@@ -323,10 +310,7 @@ class TestListFilesTool:
     @pytest.mark.asyncio
     async def test_list_files_recursive(self, tool, temp_dir):
         """Test recursive file listing."""
-        result = await tool.safe_execute(
-            directory=temp_dir,
-            recursive=True
-        )
+        result = await tool.safe_execute(directory=temp_dir, recursive=True)
 
         assert result["success"] is True
         files = result["result"]["files"]
@@ -347,9 +331,7 @@ class TestListFilesTool:
     @pytest.mark.asyncio
     async def test_list_files_with_details(self, tool, temp_dir):
         """Test file listing with detailed information."""
-        result = await tool.safe_execute(
-            directory=temp_dir
-        )
+        result = await tool.safe_execute(directory=temp_dir)
 
         assert result["success"] is True
         files = result["result"]["files"]
@@ -372,7 +354,7 @@ class TestFileInfoTool:
     @pytest.fixture
     def temp_file(self):
         """Create a temporary file for testing."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write("name,age\nAlice,25\nBob,30")
             temp_path = f.name
 
@@ -406,10 +388,7 @@ class TestFileInfoTool:
     @pytest.mark.asyncio
     async def test_get_file_info_detailed(self, tool, temp_file):
         """Test getting detailed file information."""
-        result = await tool.safe_execute(
-            file_path=temp_file,
-            include_preview=True
-        )
+        result = await tool.safe_execute(file_path=temp_file, include_preview=True)
 
         assert result["success"] is True
         info = result["result"]
@@ -429,10 +408,7 @@ class TestFileInfoTool:
     @pytest.mark.asyncio
     async def test_get_file_info_with_preview(self, tool, temp_file):
         """Test getting file info with content preview."""
-        result = await tool.safe_execute(
-            file_path=temp_file,
-            include_preview=True
-        )
+        result = await tool.safe_execute(file_path=temp_file, include_preview=True)
 
         assert result["success"] is True
         info = result["result"]

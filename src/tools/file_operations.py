@@ -29,13 +29,13 @@ class ReadFileTool(BaseTool):
             "properties": {
                 "file_path": {
                     "type": "string",
-                    "description": "Path to the file to read"
+                    "description": "Path to the file to read",
                 },
                 "file_type": {
                     "type": "string",
                     "enum": ["csv", "json", "parquet", "excel", "auto"],
                     "description": "File format (auto-detect if not specified)",
-                    "default": "auto"
+                    "default": "auto",
                 },
                 "options": {
                     "type": "object",
@@ -44,11 +44,11 @@ class ReadFileTool(BaseTool):
                         "encoding": {"type": "string", "default": "utf-8"},
                         "delimiter": {"type": "string", "default": ","},
                         "sheet_name": {"type": ["string", "integer"], "default": 0},
-                        "header": {"type": ["integer", "boolean"], "default": 0}
-                    }
-                }
+                        "header": {"type": ["integer", "boolean"], "default": 0},
+                    },
+                },
             },
-            "required": ["file_path"]
+            "required": ["file_path"],
         }
 
     @log_execution_time("read_file")
@@ -66,8 +66,9 @@ class ReadFileTool(BaseTool):
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
 
-
-        mcp_logger.log_tool_execution("read_file", "start", file_path=str(file_path), file_type=file_type)
+        mcp_logger.log_tool_execution(
+            "read_file", "start", file_path=str(file_path), file_type=file_type
+        )
 
         # Auto-detect file type if needed
         if file_type == "auto":
@@ -93,16 +94,30 @@ class ReadFileTool(BaseTool):
                 "shape": self._get_data_shape(data),
                 "columns": self._get_columns(data),
                 "file_size": format_bytes(file_path.stat().st_size),
-                "encoding": detect_encoding(str(file_path)) if file_type in ["csv", "json"] else "binary"
+                "encoding": (
+                    detect_encoding(str(file_path))
+                    if file_type in ["csv", "json"]
+                    else "binary"
+                ),
             }
 
-            mcp_logger.log_tool_execution("read_file", "success",
-                                        records_read=len(data) if hasattr(data, '__len__') else 0,
-                                        file_size=file_path.stat().st_size)
+            mcp_logger.log_tool_execution(
+                "read_file",
+                "success",
+                records_read=len(data) if hasattr(data, "__len__") else 0,
+                file_size=file_path.stat().st_size,
+            )
             return result
 
         except Exception as e:
-            mcp_logger.log_error_with_context(e, {"tool": "read_file", "file_path": str(file_path), "file_type": file_type})
+            mcp_logger.log_error_with_context(
+                e,
+                {
+                    "tool": "read_file",
+                    "file_path": str(file_path),
+                    "file_type": file_type,
+                },
+            )
             raise RuntimeError(f"Failed to read file {file_path}: {str(e)}")
 
     def _detect_file_type(self, file_path: Path) -> str:
@@ -183,17 +198,17 @@ class WriteFileTool(BaseTool):
             "properties": {
                 "file_path": {
                     "type": "string",
-                    "description": "Path where the file will be written"
+                    "description": "Path where the file will be written",
                 },
                 "data": {
                     "type": ["array", "object"],
-                    "description": "Data to write (list of dicts for tabular data, or any JSON-serializable object)"
+                    "description": "Data to write (list of dicts for tabular data, or any JSON-serializable object)",
                 },
                 "file_type": {
                     "type": "string",
                     "enum": ["csv", "json", "parquet", "excel", "auto"],
                     "description": "File format (auto-detect from extension if not specified)",
-                    "default": "auto"
+                    "default": "auto",
                 },
                 "options": {
                     "type": "object",
@@ -202,11 +217,11 @@ class WriteFileTool(BaseTool):
                         "encoding": {"type": "string", "default": "utf-8"},
                         "delimiter": {"type": "string", "default": ","},
                         "sheet_name": {"type": "string", "default": "Sheet1"},
-                        "index": {"type": "boolean", "default": False}
-                    }
-                }
+                        "index": {"type": "boolean", "default": False},
+                    },
+                },
             },
-            "required": ["file_path", "data"]
+            "required": ["file_path", "data"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -246,7 +261,7 @@ class WriteFileTool(BaseTool):
                 "file_path": str(file_path),
                 "file_type": file_type,
                 "file_size": file_path.stat().st_size,
-                "records_written": len(data) if isinstance(data, list) else 1
+                "records_written": len(data) if isinstance(data, list) else 1,
             }
 
         except Exception as e:
@@ -313,32 +328,32 @@ class ListFilesTool(BaseTool):
                 "directory": {
                     "type": "string",
                     "description": "Directory path to list files from",
-                    "default": "."
+                    "default": ".",
                 },
                 "pattern": {
                     "type": "string",
-                    "description": "File pattern to match (e.g., '*.csv', '*.json')"
+                    "description": "File pattern to match (e.g., '*.csv', '*.json')",
                 },
                 "recursive": {
                     "type": "boolean",
                     "description": "Search recursively in subdirectories",
-                    "default": False
+                    "default": False,
                 },
                 "include_hidden": {
                     "type": "boolean",
                     "description": "Include hidden files (starting with '.')",
-                    "default": False
+                    "default": False,
                 },
                 "min_size": {
                     "type": "integer",
-                    "description": "Minimum file size in bytes"
+                    "description": "Minimum file size in bytes",
                 },
                 "max_size": {
                     "type": "integer",
-                    "description": "Maximum file size in bytes"
-                }
+                    "description": "Maximum file size in bytes",
+                },
             },
-            "required": []
+            "required": [],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -372,7 +387,7 @@ class ListFilesTool(BaseTool):
                     continue
 
                 # Skip hidden files if not requested
-                if not include_hidden and file_path.name.startswith('.'):
+                if not include_hidden and file_path.name.startswith("."):
                     continue
 
                 # Get file stats
@@ -384,13 +399,15 @@ class ListFilesTool(BaseTool):
                 if max_size is not None and stat.st_size > max_size:
                     continue
 
-                files.append({
-                    "name": file_path.name,
-                    "path": str(file_path),
-                    "size": stat.st_size,
-                    "modified": stat.st_mtime,
-                    "extension": file_path.suffix.lower()
-                })
+                files.append(
+                    {
+                        "name": file_path.name,
+                        "path": str(file_path),
+                        "size": stat.st_size,
+                        "modified": stat.st_mtime,
+                        "extension": file_path.suffix.lower(),
+                    }
+                )
 
             # Sort by name
             files.sort(key=lambda x: x["name"])
@@ -404,8 +421,8 @@ class ListFilesTool(BaseTool):
                     "recursive": recursive,
                     "include_hidden": include_hidden,
                     "min_size": min_size,
-                    "max_size": max_size
-                }
+                    "max_size": max_size,
+                },
             }
 
         except Exception as e:
@@ -428,21 +445,21 @@ class FileInfoTool(BaseTool):
             "properties": {
                 "file_path": {
                     "type": "string",
-                    "description": "Path to the file to analyze"
+                    "description": "Path to the file to analyze",
                 },
                 "include_preview": {
                     "type": "boolean",
                     "description": "Include a preview of file contents",
-                    "default": True
+                    "default": True,
                 },
                 "preview_lines": {
                     "type": "integer",
                     "description": "Number of lines/records to include in preview",
                     "default": 5,
-                    "minimum": 1
-                }
+                    "minimum": 1,
+                },
             },
-            "required": ["file_path"]
+            "required": ["file_path"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -472,7 +489,7 @@ class FileInfoTool(BaseTool):
                 "extension": file_path.suffix.lower(),
                 "created": stat.st_ctime,
                 "modified": stat.st_mtime,
-                "permissions": oct(stat.st_mode)[-3:]
+                "permissions": oct(stat.st_mode)[-3:],
             }
 
             # Try to detect file type and get additional info
@@ -482,7 +499,7 @@ class FileInfoTool(BaseTool):
             if file_type in ["csv", "json", "text"]:
                 try:
                     info["encoding"] = detect_encoding(str(file_path))
-                    with open(file_path, 'r', encoding=info["encoding"]) as f:
+                    with open(file_path, "r", encoding=info["encoding"]) as f:
                         info["line_count"] = sum(1 for _ in f)
                 except Exception:
                     info["encoding"] = "unknown"
@@ -493,7 +510,9 @@ class FileInfoTool(BaseTool):
                 # Get format-specific info
                 if include_preview:
                     try:
-                        preview_info = await self._get_file_preview(file_path, file_type, preview_lines)
+                        preview_info = await self._get_file_preview(
+                            file_path, file_type, preview_lines
+                        )
                         info.update(preview_info)
                     except Exception as e:
                         info["preview_error"] = str(e)
@@ -513,55 +532,65 @@ class FileInfoTool(BaseTool):
             ".xlsx": "excel",
             ".xls": "excel",
             ".txt": "text",
-            ".log": "text"
+            ".log": "text",
         }
         return type_map.get(suffix)
 
-    async def _get_file_preview(self, file_path: Path, file_type: str, preview_lines: int) -> Dict:
+    async def _get_file_preview(
+        self, file_path: Path, file_type: str, preview_lines: int
+    ) -> Dict:
         """Get preview information for the file."""
         preview_info = {}
 
         try:
             if file_type == "csv":
                 df = pd.read_csv(file_path, nrows=preview_lines)
-                preview_info.update({
-                    "row_count_sample": len(df),
-                    "column_count": len(df.columns),
-                    "columns": df.columns.tolist(),
-                    "data_types": df.dtypes.to_dict(),
-                    "preview": df.to_dict(orient="records")
-                })
+                preview_info.update(
+                    {
+                        "row_count_sample": len(df),
+                        "column_count": len(df.columns),
+                        "columns": df.columns.tolist(),
+                        "data_types": df.dtypes.to_dict(),
+                        "preview": df.to_dict(orient="records"),
+                    }
+                )
 
             elif file_type == "json":
                 with open(file_path, "r") as f:
                     data = json.load(f)
                     if isinstance(data, list):
-                        preview_info.update({
-                            "total_records": len(data),
-                            "preview": data[:preview_lines]
-                        })
+                        preview_info.update(
+                            {
+                                "total_records": len(data),
+                                "preview": data[:preview_lines],
+                            }
+                        )
                     else:
                         preview_info["preview"] = data
 
             elif file_type == "parquet":
                 df = pd.read_parquet(file_path)
-                preview_info.update({
-                    "row_count": len(df),
-                    "column_count": len(df.columns),
-                    "columns": df.columns.tolist(),
-                    "data_types": df.dtypes.to_dict(),
-                    "preview": df.head(preview_lines).to_dict(orient="records")
-                })
+                preview_info.update(
+                    {
+                        "row_count": len(df),
+                        "column_count": len(df.columns),
+                        "columns": df.columns.tolist(),
+                        "data_types": df.dtypes.to_dict(),
+                        "preview": df.head(preview_lines).to_dict(orient="records"),
+                    }
+                )
 
             elif file_type == "excel":
                 df = pd.read_excel(file_path, nrows=preview_lines)
-                preview_info.update({
-                    "row_count_sample": len(df),
-                    "column_count": len(df.columns),
-                    "columns": df.columns.tolist(),
-                    "data_types": df.dtypes.to_dict(),
-                    "preview": df.to_dict(orient="records")
-                })
+                preview_info.update(
+                    {
+                        "row_count_sample": len(df),
+                        "column_count": len(df.columns),
+                        "columns": df.columns.tolist(),
+                        "data_types": df.dtypes.to_dict(),
+                        "preview": df.to_dict(orient="records"),
+                    }
+                )
 
             elif file_type == "text":
                 with open(file_path, "r") as f:

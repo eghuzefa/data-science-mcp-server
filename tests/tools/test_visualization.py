@@ -3,19 +3,59 @@ Tests for visualization tools.
 """
 
 import pytest
-from src.tools.visualization import CreateChartTool, DataSummaryTool, ExportVisualizationTool
+from src.tools.visualization import (
+    CreateChartTool,
+    DataSummaryTool,
+    ExportVisualizationTool,
+)
 
 
 @pytest.fixture
 def sample_data():
     """Sample data for testing."""
     return [
-        {"name": "Alice", "age": 25, "salary": 50000, "department": "Engineering", "performance": 4.2},
-        {"name": "Bob", "age": 30, "salary": 60000, "department": "Sales", "performance": 3.8},
-        {"name": "Charlie", "age": 35, "salary": 70000, "department": "Engineering", "performance": 4.5},
-        {"name": "Diana", "age": 28, "salary": 55000, "department": "Marketing", "performance": 4.0},
-        {"name": "Eve", "age": 32, "salary": 65000, "department": "Sales", "performance": 3.9},
-        {"name": "Frank", "age": 29, "salary": 58000, "department": "Marketing", "performance": 4.1}
+        {
+            "name": "Alice",
+            "age": 25,
+            "salary": 50000,
+            "department": "Engineering",
+            "performance": 4.2,
+        },
+        {
+            "name": "Bob",
+            "age": 30,
+            "salary": 60000,
+            "department": "Sales",
+            "performance": 3.8,
+        },
+        {
+            "name": "Charlie",
+            "age": 35,
+            "salary": 70000,
+            "department": "Engineering",
+            "performance": 4.5,
+        },
+        {
+            "name": "Diana",
+            "age": 28,
+            "salary": 55000,
+            "department": "Marketing",
+            "performance": 4.0,
+        },
+        {
+            "name": "Eve",
+            "age": 32,
+            "salary": 65000,
+            "department": "Sales",
+            "performance": 3.9,
+        },
+        {
+            "name": "Frank",
+            "age": 29,
+            "salary": 58000,
+            "department": "Marketing",
+            "performance": 4.1,
+        },
     ]
 
 
@@ -39,10 +79,7 @@ class TestCreateChartTool:
         """Test creating a bar chart."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=sample_data,
-            chart_type="bar",
-            x_axis="department",
-            y_axis="salary"
+            data=sample_data, chart_type="bar", x_axis="department", y_axis="salary"
         )
 
         assert "chart_data" in result
@@ -57,9 +94,7 @@ class TestCreateChartTool:
         """Test creating a pie chart."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=sample_data,
-            chart_type="pie",
-            x_axis="department"
+            data=sample_data, chart_type="pie", x_axis="department"
         )
 
         assert "chart_data" in result
@@ -72,10 +107,7 @@ class TestCreateChartTool:
         """Test creating a line chart."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=sample_data,
-            chart_type="line",
-            x_axis="age",
-            y_axis="salary"
+            data=sample_data, chart_type="line", x_axis="age", y_axis="salary"
         )
 
         assert "chart_data" in result
@@ -87,10 +119,7 @@ class TestCreateChartTool:
         """Test creating a scatter chart."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=sample_data,
-            chart_type="scatter",
-            x_axis="age",
-            y_axis="salary"
+            data=sample_data, chart_type="scatter", x_axis="age", y_axis="salary"
         )
 
         assert "chart_data" in result
@@ -102,9 +131,7 @@ class TestCreateChartTool:
         """Test creating a histogram."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=sample_data,
-            chart_type="histogram",
-            x_axis="salary"
+            data=sample_data, chart_type="histogram", x_axis="salary"
         )
 
         assert "chart_data" in result
@@ -115,10 +142,7 @@ class TestCreateChartTool:
         """Test creating a box plot."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=sample_data,
-            chart_type="box",
-            x_axis="department",
-            y_axis="salary"
+            data=sample_data, chart_type="box", x_axis="department", y_axis="salary"
         )
 
         assert "chart_data" in result
@@ -129,10 +153,7 @@ class TestCreateChartTool:
         """Test creating a heatmap."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=sample_data,
-            chart_type="heatmap",
-            x_axis="department",
-            y_axis="age"
+            data=sample_data, chart_type="heatmap", x_axis="department", y_axis="age"
         )
 
         assert "chart_data" in result
@@ -148,7 +169,7 @@ class TestCreateChartTool:
             x_axis="department",
             y_axis="salary",
             group_by="performance",
-            aggregation="mean"
+            aggregation="mean",
         )
 
         assert "chart_data" in result
@@ -166,7 +187,7 @@ class TestCreateChartTool:
             title="Employee Salaries by Department",
             width=1000,
             height=800,
-            color_scheme="viridis"
+            color_scheme="viridis",
         )
 
         assert result["chart_config"]["title"] == "Employee Salaries by Department"
@@ -178,10 +199,7 @@ class TestCreateChartTool:
         """Test handling of empty data."""
         tool = CreateChartTool()
         result = await tool.execute(
-            data=empty_data,
-            chart_type="bar",
-            x_axis="department",
-            y_axis="salary"
+            data=empty_data, chart_type="bar", x_axis="department", y_axis="salary"
         )
 
         assert "message" in result
@@ -193,23 +211,17 @@ class TestCreateChartTool:
         tool = CreateChartTool()
 
         with pytest.raises(ValueError, match="x_axis is required"):
-            await tool.execute(
-                data=sample_data,
-                chart_type="bar",
-                y_axis="salary"
-            )
+            await tool.execute(data=sample_data, chart_type="bar", y_axis="salary")
 
     @pytest.mark.asyncio
     async def test_missing_y_axis_error_for_non_pie(self, sample_data):
         """Test error when y_axis is missing for non-pie charts."""
         tool = CreateChartTool()
 
-        with pytest.raises(ValueError, match="y_axis is required for non-pie and non-histogram charts"):
-            await tool.execute(
-                data=sample_data,
-                chart_type="bar",
-                x_axis="department"
-            )
+        with pytest.raises(
+            ValueError, match="y_axis is required for non-pie and non-histogram charts"
+        ):
+            await tool.execute(data=sample_data, chart_type="bar", x_axis="department")
 
     @pytest.mark.asyncio
     async def test_invalid_field_error(self, sample_data):
@@ -221,7 +233,7 @@ class TestCreateChartTool:
                 data=sample_data,
                 chart_type="bar",
                 x_axis="invalid_field",
-                y_axis="salary"
+                y_axis="salary",
             )
 
     @pytest.mark.asyncio
@@ -234,7 +246,7 @@ class TestCreateChartTool:
                 data="invalid_data",
                 chart_type="bar",
                 x_axis="department",
-                y_axis="salary"
+                y_axis="salary",
             )
 
 
@@ -258,10 +270,7 @@ class TestDataSummaryTool:
     async def test_summary_with_correlations(self, sample_data):
         """Test summary generation with correlations."""
         tool = DataSummaryTool()
-        result = await tool.execute(
-            data=sample_data,
-            include_correlations=True
-        )
+        result = await tool.execute(data=sample_data, include_correlations=True)
 
         assert "correlations" in result["summary"]
         assert "correlation_matrix" in result["summary"]["correlations"]
@@ -270,10 +279,7 @@ class TestDataSummaryTool:
     async def test_summary_with_grouping(self, sample_data):
         """Test summary generation with grouping."""
         tool = DataSummaryTool()
-        result = await tool.execute(
-            data=sample_data,
-            group_by="department"
-        )
+        result = await tool.execute(data=sample_data, group_by="department")
 
         # Check if grouping was applied - the actual key may vary
         assert "group_by" in str(result) or "grouped" in str(result)
@@ -282,10 +288,7 @@ class TestDataSummaryTool:
     async def test_summary_with_specific_fields(self, sample_data):
         """Test summary generation for specific fields."""
         tool = DataSummaryTool()
-        result = await tool.execute(
-            data=sample_data,
-            focus_fields=["age", "salary"]
-        )
+        result = await tool.execute(data=sample_data, focus_fields=["age", "salary"])
 
         # Should only include specified fields in field_statistics
         field_stats = result["summary"]["field_summaries"]
@@ -322,7 +325,9 @@ class TestDataSummaryTool:
 
         # Check categorical field (department)
         dept_stats = field_stats["department"]
-        assert "object" in dept_stats["data_type"] or "string" in dept_stats["data_type"]
+        assert (
+            "object" in dept_stats["data_type"] or "string" in dept_stats["data_type"]
+        )
         assert "unique_values" in dept_stats
         assert "most_common" in dept_stats
 
@@ -369,10 +374,7 @@ class TestDataSummaryTool:
         tool = DataSummaryTool()
 
         # Tool should handle invalid group_by gracefully
-        result = await tool.execute(
-            data=sample_data,
-            group_by="invalid_field"
-        )
+        result = await tool.execute(data=sample_data, group_by="invalid_field")
 
         # Should still generate summary even with invalid group_by
         assert "summary" in result
@@ -388,7 +390,7 @@ class TestExportVisualizationTool:
         result = await tool.execute(
             data=sample_data,
             format="json",
-            content={"title": "Test Chart", "description": "Sample data"}
+            content={"title": "Test Chart", "description": "Sample data"},
         )
 
         assert "exported_content" in result
@@ -402,9 +404,7 @@ class TestExportVisualizationTool:
         """Test CSV export."""
         tool = ExportVisualizationTool()
         result = await tool.execute(
-            data=sample_data,
-            format="csv",
-            content={"title": "Test Data"}
+            data=sample_data, format="csv", content={"title": "Test Data"}
         )
 
         assert "exported_content" in result
@@ -419,7 +419,7 @@ class TestExportVisualizationTool:
         result = await tool.execute(
             data=sample_data,
             format="html",
-            content={"title": "Test Report", "description": "HTML export test"}
+            content={"title": "Test Report", "description": "HTML export test"},
         )
 
         assert "exported_content" in result
@@ -435,7 +435,7 @@ class TestExportVisualizationTool:
         result = await tool.execute(
             data=sample_data,
             format="markdown",
-            content={"title": "Test Report", "description": "Markdown export test"}
+            content={"title": "Test Report", "description": "Markdown export test"},
         )
 
         assert "exported_content" in result
@@ -452,7 +452,7 @@ class TestExportVisualizationTool:
             data=sample_data,
             format="json",
             content={"title": "Test"},
-            filename="custom_export"
+            filename="custom_export",
         )
 
         assert result["filename"] == "custom_export.json"
@@ -462,9 +462,7 @@ class TestExportVisualizationTool:
         """Test export with empty data."""
         tool = ExportVisualizationTool()
         result = await tool.execute(
-            data=empty_data,
-            format="json",
-            content={"title": "Empty Data Test"}
+            data=empty_data, format="json", content={"title": "Empty Data Test"}
         )
 
         assert "exported_content" in result
@@ -477,10 +475,7 @@ class TestExportVisualizationTool:
         tool = ExportVisualizationTool()
 
         with pytest.raises(ValueError, match="Content is required for export"):
-            await tool.execute(
-                data=sample_data,
-                format="json"
-            )
+            await tool.execute(data=sample_data, format="json")
 
     @pytest.mark.asyncio
     async def test_invalid_format_error(self, sample_data):
@@ -489,9 +484,7 @@ class TestExportVisualizationTool:
 
         with pytest.raises(RuntimeError, match="Failed to export visualization"):
             await tool.execute(
-                data=sample_data,
-                format="invalid_format",
-                content={"title": "Test"}
+                data=sample_data, format="invalid_format", content={"title": "Test"}
             )
 
     @pytest.mark.asyncio
@@ -502,9 +495,7 @@ class TestExportVisualizationTool:
         # The export tool doesn't validate data type early, it fails during processing
         try:
             result = await tool.execute(
-                data="invalid_data",
-                format="json",
-                content={"title": "Test"}
+                data="invalid_data", format="json", content={"title": "Test"}
             )
             # If it doesn't raise an error, check that it handled invalid data gracefully
             assert "error" in str(result).lower() or "exported_content" in result
@@ -517,9 +508,7 @@ class TestExportVisualizationTool:
         """Test export summary information."""
         tool = ExportVisualizationTool()
         result = await tool.execute(
-            data=sample_data,
-            format="json",
-            content={"title": "Test"}
+            data=sample_data, format="json", content={"title": "Test"}
         )
 
         summary = result["export_summary"]

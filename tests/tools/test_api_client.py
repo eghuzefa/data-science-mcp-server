@@ -9,9 +9,15 @@ from aioresponses import aioresponses
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from tools.api_client import FetchApiDataTool, MonitorApiTool, BatchApiCallsTool, ApiAuthTool
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+
+from tools.api_client import (
+    FetchApiDataTool,
+    MonitorApiTool,
+    BatchApiCallsTool,
+    ApiAuthTool,
+)
 
 
 class TestFetchApiDataTool:
@@ -59,19 +65,20 @@ class TestFetchApiDataTool:
 
     def test_validate_input_missing_auth_token_bearer(self, tool):
         """Test validation fails when bearer auth lacks token."""
-        with pytest.raises(ValueError, match="auth_token is required for bearer authentication"):
-            tool.validate_input(
-                url="https://api.example.com",
-                auth_type="bearer"
-            )
+        with pytest.raises(
+            ValueError, match="auth_token is required for bearer authentication"
+        ):
+            tool.validate_input(url="https://api.example.com", auth_type="bearer")
 
     def test_validate_input_missing_basic_auth_credentials(self, tool):
         """Test validation fails when basic auth lacks credentials."""
-        with pytest.raises(ValueError, match="auth_username and auth_password are required"):
+        with pytest.raises(
+            ValueError, match="auth_username and auth_password are required"
+        ):
             tool.validate_input(
                 url="https://api.example.com",
                 auth_type="basic",
-                auth_username="user"
+                auth_username="user",
                 # Missing auth_password
             )
 
@@ -102,11 +109,7 @@ class TestFetchApiDataTool:
 
             m.post(url, payload=response_data, status=201)
 
-            result = await tool.execute(
-                url=url,
-                method="POST",
-                data=request_data
-            )
+            result = await tool.execute(url=url, method="POST", data=request_data)
 
             assert result["success"] is True
             assert result["status_code"] == 201
@@ -123,9 +126,7 @@ class TestFetchApiDataTool:
             m.get(url, payload=mock_data, status=200)
 
             result = await tool.execute(
-                url=url,
-                auth_type="bearer",
-                auth_token="test-token"
+                url=url, auth_type="bearer", auth_token="test-token"
             )
 
             assert result["success"] is True
@@ -141,9 +142,7 @@ class TestFetchApiDataTool:
             m.get(url, payload=mock_data, status=200)
 
             result = await tool.execute(
-                url=url,
-                auth_type="api_key",
-                auth_token="test-api-key"
+                url=url, auth_type="api_key", auth_token="test-api-key"
             )
 
             assert result["success"] is True
@@ -159,10 +158,7 @@ class TestFetchApiDataTool:
 
             result = await tool.execute(
                 url=url,
-                headers={
-                    "Custom-Header": "custom-value",
-                    "Accept": "application/json"
-                }
+                headers={"Custom-Header": "custom-value", "Accept": "application/json"},
             )
 
             assert result["success"] is True
@@ -178,8 +174,7 @@ class TestFetchApiDataTool:
             m.get(url_with_params, payload={"filtered": "data"})
 
             result = await tool.execute(
-                url=base_url,
-                params={"filter": "active", "limit": "10"}
+                url=base_url, params={"filter": "active", "limit": "10"}
             )
 
             assert result["success"] is True
@@ -206,7 +201,7 @@ class TestFetchApiDataTool:
             url = "https://api.example.com/text"
             text_response = "Plain text response"
 
-            m.get(url, body=text_response, content_type='text/plain')
+            m.get(url, body=text_response, content_type="text/plain")
 
             result = await tool.execute(url=url)
 
@@ -301,10 +296,7 @@ class TestMonitorApiTool:
 
             m.get(url, status=301)
 
-            result = await tool.execute(
-                url=url,
-                expected_status=[200, 301, 302]
-            )
+            result = await tool.execute(url=url, expected_status=[200, 301, 302])
 
             assert result["status_code"] == 301
             assert result["is_healthy"] is True
@@ -318,10 +310,7 @@ class TestMonitorApiTool:
 
             m.get(url, body=response_body, status=200)
 
-            result = await tool.execute(
-                url=url,
-                check_content=True
-            )
+            result = await tool.execute(url=url, check_content=True)
 
             assert result["is_healthy"] is True
             assert "content" in result
@@ -337,9 +326,7 @@ class TestMonitorApiTool:
             m.get(url, status=200, payload={"status": "healthy"})
 
             result = await tool.execute(
-                url=url,
-                auth_type="bearer",
-                auth_token="health-token"
+                url=url, auth_type="bearer", auth_token="health-token"
             )
 
             assert result["is_healthy"] is True
@@ -380,7 +367,7 @@ class TestMonitorApiTool:
         with aioresponses() as m:
             url = "https://api.example.com/health"
 
-            m.head(url, status=200, headers={'Content-Length': '1024'})
+            m.head(url, status=200, headers={"Content-Length": "1024"})
 
             result = await tool.execute(url=url, method="HEAD")
 
@@ -407,7 +394,12 @@ class TestMonitorApiTool:
         with aioresponses() as m:
             url = "https://api.example.com/data"
 
-            m.get(url, status=200, headers={'Content-Length': '2048'}, payload={"data": "test"})
+            m.get(
+                url,
+                status=200,
+                headers={"Content-Length": "2048"},
+                payload={"data": "test"},
+            )
 
             result = await tool.execute(url=url, check_content=False)
 
@@ -487,7 +479,13 @@ class TestBatchApiCallsTool:
             requests = [
                 {"id": "req1", "url": f"{base_url}/endpoint1", "method": "GET"},
                 {"id": "req2", "url": f"{base_url}/endpoint2", "method": "GET"},
-                {"id": "req3", "url": f"{base_url}/endpoint3", "method": "POST", "data": {"name": "test"}, "expected_status": [201]}
+                {
+                    "id": "req3",
+                    "url": f"{base_url}/endpoint3",
+                    "method": "POST",
+                    "data": {"name": "test"},
+                    "expected_status": [201],
+                },
             ]
 
             result = await tool.execute(requests=requests, max_concurrent=2)
@@ -511,9 +509,7 @@ class TestBatchApiCallsTool:
 
             requests = [{"id": "auth_req", "url": url, "method": "GET"}]
             result = await tool.execute(
-                requests=requests,
-                auth_type="bearer",
-                auth_token="test-token"
+                requests=requests, auth_type="bearer", auth_token="test-token"
             )
 
             assert result["results"][0]["success"] is True
@@ -530,7 +526,11 @@ class TestBatchApiCallsTool:
             requests = [
                 {"id": "req1", "url": f"{base_url}/success", "method": "GET"},
                 {"id": "req2", "url": f"{base_url}/error", "method": "GET"},
-                {"id": "req3", "url": f"{base_url}/success", "method": "GET"}  # Should not execute
+                {
+                    "id": "req3",
+                    "url": f"{base_url}/success",
+                    "method": "GET",
+                },  # Should not execute
             ]
 
             result = await tool.execute(requests=requests, stop_on_error=True)
@@ -552,7 +552,7 @@ class TestBatchApiCallsTool:
 
             requests = [
                 {"id": "fast", "url": url1, "timeout": 1},
-                {"id": "slow", "url": url2, "timeout": 60}
+                {"id": "slow", "url": url2, "timeout": 60},
             ]
 
             result = await tool.execute(requests=requests)
@@ -633,7 +633,14 @@ class TestApiAuthTool:
 
         # Check auth types
         auth_types = properties["auth_type"]["enum"]
-        expected_types = ["bearer", "basic", "api_key", "oauth2", "custom_header", "query_param"]
+        expected_types = [
+            "bearer",
+            "basic",
+            "api_key",
+            "oauth2",
+            "custom_header",
+            "query_param",
+        ]
         assert all(auth_type in auth_types for auth_type in expected_types)
 
         # Check default values
@@ -653,9 +660,7 @@ class TestApiAuthTool:
             m.get(url, status=200, payload={"protected": "data"})
 
             result = await tool.execute(
-                url=url,
-                auth_type="bearer",
-                auth_token="valid-token"
+                url=url, auth_type="bearer", auth_token="valid-token"
             )
 
             assert result["auth_type"] == "bearer"
@@ -676,10 +681,7 @@ class TestApiAuthTool:
             m.get(url, status=200, payload={"authenticated": True})  # With auth
 
             result = await tool.execute(
-                url=url,
-                auth_type="basic",
-                auth_username="user",
-                auth_password="pass"
+                url=url, auth_type="basic", auth_username="user", auth_password="pass"
             )
 
             assert result["analysis"]["authentication_working"] is True
@@ -697,7 +699,7 @@ class TestApiAuthTool:
                 url=url,
                 auth_type="api_key",
                 auth_token="secret-key",
-                api_key_header="X-Custom-Key"
+                api_key_header="X-Custom-Key",
             )
 
             assert result["analysis"]["authentication_working"] is True
@@ -715,7 +717,7 @@ class TestApiAuthTool:
                 url=url,
                 auth_type="custom_header",
                 custom_header_name="X-Custom-Auth",
-                custom_header_value="custom-value"
+                custom_header_value="custom-value",
             )
 
             assert result["analysis"]["authentication_working"] is True
@@ -735,7 +737,7 @@ class TestApiAuthTool:
                 auth_type="query_param",
                 auth_token="secret",
                 query_param_name="token",
-                test_without_auth=False  # Skip testing without auth to avoid confusion
+                test_without_auth=False,  # Skip testing without auth to avoid confusion
             )
 
             assert result["analysis"]["authentication_working"] is True
@@ -757,7 +759,7 @@ class TestApiAuthTool:
                 url=url,
                 auth_type="bearer",
                 auth_token="token",
-                test_methods=["GET", "POST", "PUT"]
+                test_methods=["GET", "POST", "PUT"],
             )
 
             auth_tests = [t for t in result["auth_tests"] if t["auth_used"] == "bearer"]
@@ -772,7 +774,7 @@ class TestApiAuthTool:
         """Test authentication with missing credentials."""
         result = await tool.execute(
             url="https://api.example.com/test",
-            auth_type="bearer"
+            auth_type="bearer",
             # Missing auth_token
         )
 
@@ -787,11 +789,15 @@ class TestApiAuthTool:
             api_url = "https://api.example.com/oauth"
 
             # Mock token request
-            m.post(token_url, payload={
-                "access_token": "oauth-token",
-                "token_type": "bearer",
-                "expires_in": 3600
-            }, status=200)
+            m.post(
+                token_url,
+                payload={
+                    "access_token": "oauth-token",
+                    "token_type": "bearer",
+                    "expires_in": 3600,
+                },
+                status=200,
+            )
 
             # Mock API call
             m.get(api_url, status=401)  # Without auth
@@ -802,7 +808,7 @@ class TestApiAuthTool:
                 auth_type="oauth2",
                 oauth2_client_id="client123",
                 oauth2_client_secret="secret456",
-                oauth2_token_url=token_url
+                oauth2_token_url=token_url,
             )
 
             assert result["oauth_details"]["success"] is True
@@ -821,7 +827,7 @@ class TestApiAuthTool:
                 auth_type="bearer",
                 auth_token="token",
                 detailed_analysis=False,
-                test_without_auth=False
+                test_without_auth=False,
             )
 
             # Should have minimal analysis

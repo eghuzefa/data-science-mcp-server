@@ -28,8 +28,8 @@ class MCPLogger:
 
         # Create formatters
         console_formatter = logging.Formatter(
-            '%(asctime)s | %(levelname)s | %(name)s | %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
 
         console_handler.setFormatter(console_formatter)
@@ -45,8 +45,8 @@ class MCPLogger:
             file_handler.setLevel(logging.DEBUG)
 
             file_formatter = logging.Formatter(
-                '%(asctime)s | %(levelname)s | %(name)s:%(lineno)d | %(funcName)s | %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S'
+                "%(asctime)s | %(levelname)s | %(name)s:%(lineno)d | %(funcName)s | %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
             )
 
             file_handler.setFormatter(file_formatter)
@@ -57,8 +57,9 @@ class MCPLogger:
         extra_info = " | ".join([f"{k}={v}" for k, v in kwargs.items()])
         self.logger.info(f"TOOL_EXEC | {tool_name} | {operation} | {extra_info}")
 
-    def log_data_operation(self, operation: str, records_count: int,
-                          execution_time: float, **kwargs) -> None:
+    def log_data_operation(
+        self, operation: str, records_count: int, execution_time: float, **kwargs
+    ) -> None:
         """Log data operation metrics."""
         extra_info = " | ".join([f"{k}={v}" for k, v in kwargs.items()])
         self.logger.info(
@@ -69,9 +70,13 @@ class MCPLogger:
     def log_error_with_context(self, error: Exception, context: dict) -> None:
         """Log error with additional context."""
         context_str = " | ".join([f"{k}={v}" for k, v in context.items()])
-        self.logger.error(f"ERROR | {type(error).__name__}: {str(error)} | {context_str}")
+        self.logger.error(
+            f"ERROR | {type(error).__name__}: {str(error)} | {context_str}"
+        )
 
-    def log_performance_metric(self, metric_name: str, value: float, unit: str = "") -> None:
+    def log_performance_metric(
+        self, metric_name: str, value: float, unit: str = ""
+    ) -> None:
         """Log performance metrics."""
         self.logger.info(f"METRIC | {metric_name} | {value} {unit}")
 

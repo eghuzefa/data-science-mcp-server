@@ -25,7 +25,7 @@ class FilterDataTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to filter (list of dictionaries)"
+                    "description": "Data to filter (list of dictionaries)",
                 },
                 "conditions": {
                     "type": "array",
@@ -35,50 +35,69 @@ class FilterDataTool(BaseTool):
                         "properties": {
                             "field": {
                                 "type": "string",
-                                "description": "Field name to filter on"
+                                "description": "Field name to filter on",
                             },
                             "operator": {
                                 "type": "string",
-                                "enum": ["==", "!=", ">", ">=", "<", "<=", "in", "not_in", "contains", "starts_with", "ends_with",
-                                        "is_null", "is_not_null", "regex", "not_regex", "between", "not_between",
-                                        "length_eq", "length_gt", "length_lt"],
-                                "description": "Comparison operator"
+                                "enum": [
+                                    "==",
+                                    "!=",
+                                    ">",
+                                    ">=",
+                                    "<",
+                                    "<=",
+                                    "in",
+                                    "not_in",
+                                    "contains",
+                                    "starts_with",
+                                    "ends_with",
+                                    "is_null",
+                                    "is_not_null",
+                                    "regex",
+                                    "not_regex",
+                                    "between",
+                                    "not_between",
+                                    "length_eq",
+                                    "length_gt",
+                                    "length_lt",
+                                ],
+                                "description": "Comparison operator",
                             },
                             "value": {
                                 "description": "Value to compare against (not needed for is_null/is_not_null)"
-                            }
+                            },
                         },
-                        "required": ["field", "operator"]
-                    }
+                        "required": ["field", "operator"],
+                    },
                 },
                 "logic": {
                     "type": "string",
                     "enum": ["AND", "OR"],
                     "description": "Logic to combine multiple conditions",
-                    "default": "AND"
+                    "default": "AND",
                 },
                 "limit": {
                     "type": "integer",
                     "description": "Maximum number of records to return",
-                    "minimum": 1
+                    "minimum": 1,
                 },
                 "sort_by": {
                     "type": "string",
-                    "description": "Field to sort results by"
+                    "description": "Field to sort results by",
                 },
                 "sort_order": {
                     "type": "string",
                     "enum": ["asc", "desc"],
                     "description": "Sort order",
-                    "default": "asc"
+                    "default": "asc",
                 },
                 "validate_output": {
                     "type": "boolean",
                     "description": "Whether to validate output data quality",
-                    "default": False
-                }
+                    "default": False,
+                },
             },
-            "required": ["data", "conditions"]
+            "required": ["data", "conditions"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -100,7 +119,7 @@ class FilterDataTool(BaseTool):
                 "original_count": 0,
                 "filtered_count": 0,
                 "conditions_applied": conditions,
-                "logic": logic
+                "logic": logic,
             }
 
         if not conditions:
@@ -131,7 +150,9 @@ class FilterDataTool(BaseTool):
                 "filtered_count": len(filtered_data),
                 "conditions_applied": conditions,
                 "logic": logic,
-                "filters_summary": self._generate_filter_summary(conditions, logic, len(data), len(filtered_data))
+                "filters_summary": self._generate_filter_summary(
+                    conditions, logic, len(data), len(filtered_data)
+                ),
             }
 
             # Add validation if requested
@@ -144,7 +165,9 @@ class FilterDataTool(BaseTool):
         except Exception as e:
             raise RuntimeError(f"Failed to filter data: {str(e)}")
 
-    def _apply_filters(self, df: pd.DataFrame, conditions: List[Dict], logic: str) -> pd.DataFrame:
+    def _apply_filters(
+        self, df: pd.DataFrame, conditions: List[Dict], logic: str
+    ) -> pd.DataFrame:
         """Apply filter conditions to the DataFrame."""
         if not conditions:
             return df
@@ -214,11 +237,15 @@ class FilterDataTool(BaseTool):
             return ~series.astype(str).str.contains(str(value), regex=True, na=False)
         elif operator == "between":
             if not isinstance(value, list) or len(value) != 2:
-                raise ValueError("Value for 'between' operator must be a list of two values [min, max]")
+                raise ValueError(
+                    "Value for 'between' operator must be a list of two values [min, max]"
+                )
             return (series >= value[0]) & (series <= value[1])
         elif operator == "not_between":
             if not isinstance(value, list) or len(value) != 2:
-                raise ValueError("Value for 'not_between' operator must be a list of two values [min, max]")
+                raise ValueError(
+                    "Value for 'not_between' operator must be a list of two values [min, max]"
+                )
             return ~((series >= value[0]) & (series <= value[1]))
         elif operator == "length_eq":
             return series.astype(str).str.len() == value
@@ -229,10 +256,19 @@ class FilterDataTool(BaseTool):
         else:
             raise ValueError(f"Unsupported operator: {operator}")
 
-    def _generate_filter_summary(self, conditions: List[Dict], logic: str,
-                                original_count: int, filtered_count: int) -> Dict:
+    def _generate_filter_summary(
+        self,
+        conditions: List[Dict],
+        logic: str,
+        original_count: int,
+        filtered_count: int,
+    ) -> Dict:
         """Generate a summary of the filtering operation."""
-        reduction_percentage = ((original_count - filtered_count) / original_count * 100) if original_count > 0 else 0
+        reduction_percentage = (
+            ((original_count - filtered_count) / original_count * 100)
+            if original_count > 0
+            else 0
+        )
 
         return {
             "conditions_count": len(conditions),
@@ -243,7 +279,7 @@ class FilterDataTool(BaseTool):
             "conditions_summary": [
                 f"{cond['field']} {cond['operator']} {cond.get('value', '')}"
                 for cond in conditions
-            ]
+            ],
         }
 
     def _validate_data_quality(self, data: List[Dict]) -> Dict:
@@ -253,7 +289,7 @@ class FilterDataTool(BaseTool):
                 "quality_score": 1.0,
                 "total_records": 0,
                 "issues": [],
-                "recommendations": []
+                "recommendations": [],
             }
 
         df = pd.DataFrame(data)
@@ -264,41 +300,51 @@ class FilterDataTool(BaseTool):
         null_counts = df.isnull().sum()
         null_fields = null_counts[null_counts > 0].to_dict()
         if null_fields:
-            issues.append({
-                "type": "null_values",
-                "description": f"Found null values in fields: {list(null_fields.keys())}",
-                "details": null_fields
-            })
+            issues.append(
+                {
+                    "type": "null_values",
+                    "description": f"Found null values in fields: {list(null_fields.keys())}",
+                    "details": null_fields,
+                }
+            )
             recommendations.append("Consider filtering out or filling null values")
 
         # Check for duplicate records
         duplicates = df.duplicated().sum()
         if duplicates > 0:
-            issues.append({
-                "type": "duplicate_records",
-                "description": f"Found {duplicates} duplicate records",
-                "count": duplicates
-            })
+            issues.append(
+                {
+                    "type": "duplicate_records",
+                    "description": f"Found {duplicates} duplicate records",
+                    "count": duplicates,
+                }
+            )
             recommendations.append("Consider removing duplicate records")
 
         # Check for empty strings
         empty_string_counts = {}
-        for col in df.select_dtypes(include=['object']).columns:
-            empty_count = (df[col] == '').sum()
+        for col in df.select_dtypes(include=["object"]).columns:
+            empty_count = (df[col] == "").sum()
             if empty_count > 0:
                 empty_string_counts[col] = empty_count
 
         if empty_string_counts:
-            issues.append({
-                "type": "empty_strings",
-                "description": f"Found empty strings in fields: {list(empty_string_counts.keys())}",
-                "details": empty_string_counts
-            })
+            issues.append(
+                {
+                    "type": "empty_strings",
+                    "description": f"Found empty strings in fields: {list(empty_string_counts.keys())}",
+                    "details": empty_string_counts,
+                }
+            )
             recommendations.append("Consider treating empty strings as null values")
 
         # Calculate quality score (1.0 = perfect, 0.0 = very poor)
         total_cells = len(data) * len(df.columns) if len(df.columns) > 0 else 1
-        problem_cells = sum(null_counts) + sum(empty_string_counts.values()) + duplicates * len(df.columns)
+        problem_cells = (
+            sum(null_counts)
+            + sum(empty_string_counts.values())
+            + duplicates * len(df.columns)
+        )
         quality_score = max(0.0, 1.0 - (problem_cells / total_cells))
 
         return {
@@ -310,8 +356,8 @@ class FilterDataTool(BaseTool):
             "summary": {
                 "null_values": len(null_fields),
                 "duplicates": duplicates,
-                "empty_strings": len(empty_string_counts)
-            }
+                "empty_strings": len(empty_string_counts),
+            },
         }
 
 
@@ -331,12 +377,12 @@ class AggregateDataTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to aggregate (list of dictionaries)"
+                    "description": "Data to aggregate (list of dictionaries)",
                 },
                 "group_by": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Fields to group by"
+                    "description": "Fields to group by",
                 },
                 "aggregations": {
                     "type": "array",
@@ -346,40 +392,59 @@ class AggregateDataTool(BaseTool):
                         "properties": {
                             "field": {
                                 "type": "string",
-                                "description": "Field to aggregate"
+                                "description": "Field to aggregate",
                             },
                             "operation": {
                                 "type": "string",
-                                "enum": ["sum", "mean", "median", "min", "max", "count", "std", "var", "first", "last",
-                                        "percentile_25", "percentile_50", "percentile_75", "percentile_90", "percentile_95",
-                                        "mode", "nunique", "skew", "kurt", "range"],
-                                "description": "Aggregation operation"
+                                "enum": [
+                                    "sum",
+                                    "mean",
+                                    "median",
+                                    "min",
+                                    "max",
+                                    "count",
+                                    "std",
+                                    "var",
+                                    "first",
+                                    "last",
+                                    "percentile_25",
+                                    "percentile_50",
+                                    "percentile_75",
+                                    "percentile_90",
+                                    "percentile_95",
+                                    "mode",
+                                    "nunique",
+                                    "skew",
+                                    "kurt",
+                                    "range",
+                                ],
+                                "description": "Aggregation operation",
                             },
                             "alias": {
                                 "type": "string",
-                                "description": "Alias for the aggregated field (optional)"
-                            }
+                                "description": "Alias for the aggregated field (optional)",
+                            },
                         },
-                        "required": ["field", "operation"]
-                    }
+                        "required": ["field", "operation"],
+                    },
                 },
                 "sort_by": {
                     "type": "string",
-                    "description": "Field to sort results by"
+                    "description": "Field to sort results by",
                 },
                 "sort_order": {
                     "type": "string",
                     "enum": ["asc", "desc"],
                     "description": "Sort order",
-                    "default": "asc"
+                    "default": "asc",
                 },
                 "limit": {
                     "type": "integer",
                     "description": "Maximum number of groups to return",
-                    "minimum": 1
-                }
+                    "minimum": 1,
+                },
             },
-            "required": ["data", "aggregations"]
+            "required": ["data", "aggregations"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -400,7 +465,7 @@ class AggregateDataTool(BaseTool):
                 "original_count": 0,
                 "group_count": 0,
                 "group_by_fields": group_by,
-                "aggregations_applied": aggregations
+                "aggregations_applied": aggregations,
             }
 
         if not aggregations:
@@ -419,7 +484,9 @@ class AggregateDataTool(BaseTool):
         agg_fields = [agg["field"] for agg in aggregations]
         missing_agg_fields = [field for field in agg_fields if field not in df.columns]
         if missing_agg_fields:
-            raise ValueError(f"Aggregation fields not found in data: {missing_agg_fields}")
+            raise ValueError(
+                f"Aggregation fields not found in data: {missing_agg_fields}"
+            )
 
         try:
             # Perform aggregation
@@ -428,7 +495,9 @@ class AggregateDataTool(BaseTool):
             # Sort if requested
             if sort_by and sort_by in aggregated_df.columns:
                 ascending = sort_order == "asc"
-                aggregated_df = aggregated_df.sort_values(by=sort_by, ascending=ascending)
+                aggregated_df = aggregated_df.sort_values(
+                    by=sort_by, ascending=ascending
+                )
 
             # Apply limit if specified
             if limit:
@@ -449,13 +518,15 @@ class AggregateDataTool(BaseTool):
                 "aggregations_applied": aggregations,
                 "aggregation_summary": self._generate_aggregation_summary(
                     group_by, aggregations, len(data), len(aggregated_data)
-                )
+                ),
             }
 
         except Exception as e:
             raise RuntimeError(f"Failed to aggregate data: {str(e)}")
 
-    def _perform_aggregation(self, df: pd.DataFrame, group_by: List[str], aggregations: List[Dict]) -> pd.DataFrame:
+    def _perform_aggregation(
+        self, df: pd.DataFrame, group_by: List[str], aggregations: List[Dict]
+    ) -> pd.DataFrame:
         """Perform the aggregation operations."""
         # Create aggregation dictionary for pandas
         agg_dict = {}
@@ -490,7 +561,7 @@ class AggregateDataTool(BaseTool):
                 agg_func = lambda x: x.max() - x.min()
             elif operation.startswith("percentile_"):
                 percentile = int(operation.split("_")[1])
-                agg_func = lambda x, p=percentile: x.quantile(p/100)
+                agg_func = lambda x, p=percentile: x.quantile(p / 100)
             else:
                 agg_func = operation  # sum, min, max, count
 
@@ -543,8 +614,13 @@ class AggregateDataTool(BaseTool):
 
         return result
 
-    def _generate_aggregation_summary(self, group_by: List[str], aggregations: List[Dict],
-                                    original_count: int, group_count: int) -> Dict:
+    def _generate_aggregation_summary(
+        self,
+        group_by: List[str],
+        aggregations: List[Dict],
+        original_count: int,
+        group_count: int,
+    ) -> Dict:
         """Generate a summary of the aggregation operation."""
         return {
             "group_by_fields": group_by,
@@ -552,11 +628,14 @@ class AggregateDataTool(BaseTool):
             "aggregations_count": len(aggregations),
             "original_records": original_count,
             "result_groups": group_count,
-            "reduction_ratio": round(original_count / group_count, 2) if group_count > 0 else 0,
+            "reduction_ratio": (
+                round(original_count / group_count, 2) if group_count > 0 else 0
+            ),
             "aggregation_operations": [
-                f"{agg['operation']}({agg['field']})" + (f" as {agg['alias']}" if agg.get('alias') else "")
+                f"{agg['operation']}({agg['field']})"
+                + (f" as {agg['alias']}" if agg.get("alias") else "")
                 for agg in aggregations
-            ]
+            ],
         }
 
 
@@ -576,36 +655,36 @@ class JoinDataTool(BaseTool):
             "properties": {
                 "left_data": {
                     "type": "array",
-                    "description": "Left dataset (list of dictionaries)"
+                    "description": "Left dataset (list of dictionaries)",
                 },
                 "right_data": {
                     "type": "array",
-                    "description": "Right dataset (list of dictionaries)"
+                    "description": "Right dataset (list of dictionaries)",
                 },
                 "join_type": {
                     "type": "string",
                     "enum": ["inner", "left", "right", "outer"],
                     "description": "Type of join to perform",
-                    "default": "inner"
+                    "default": "inner",
                 },
                 "left_on": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Fields to join on from left dataset"
+                    "description": "Fields to join on from left dataset",
                 },
                 "right_on": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Fields to join on from right dataset (if different from left_on)"
+                    "description": "Fields to join on from right dataset (if different from left_on)",
                 },
                 "suffixes": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Suffixes for overlapping column names [left_suffix, right_suffix]",
-                    "default": ["_left", "_right"]
-                }
+                    "default": ["_left", "_right"],
+                },
             },
-            "required": ["left_data", "right_data", "left_on"]
+            "required": ["left_data", "right_data", "left_on"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -648,7 +727,7 @@ class JoinDataTool(BaseTool):
                 left_on=left_on,
                 right_on=right_on,
                 how=join_type,
-                suffixes=suffixes
+                suffixes=suffixes,
             )
 
             # Convert back to list of dictionaries
@@ -663,23 +742,28 @@ class JoinDataTool(BaseTool):
                 "join_keys": {"left": left_on, "right": right_on},
                 "join_summary": self._generate_join_summary(
                     len(left_data), len(right_data), len(joined_data), join_type
-                )
+                ),
             }
 
         except Exception as e:
             raise RuntimeError(f"Failed to join datasets: {str(e)}")
 
-    def _generate_join_summary(self, left_count: int, right_count: int,
-                              result_count: int, join_type: str) -> Dict:
+    def _generate_join_summary(
+        self, left_count: int, right_count: int, result_count: int, join_type: str
+    ) -> Dict:
         """Generate summary of the join operation."""
         return {
             "join_type": join_type,
             "input_records": {"left": left_count, "right": right_count},
             "output_records": result_count,
             "join_efficiency": {
-                "left_match_rate": (result_count / left_count * 100) if left_count > 0 else 0,
-                "right_match_rate": (result_count / right_count * 100) if right_count > 0 else 0
-            }
+                "left_match_rate": (
+                    (result_count / left_count * 100) if left_count > 0 else 0
+                ),
+                "right_match_rate": (
+                    (result_count / right_count * 100) if right_count > 0 else 0
+                ),
+            },
         }
 
 
@@ -699,33 +783,33 @@ class PivotDataTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to pivot (list of dictionaries)"
+                    "description": "Data to pivot (list of dictionaries)",
                 },
                 "index": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Fields to use as row index"
+                    "description": "Fields to use as row index",
                 },
                 "columns": {
                     "type": "string",
-                    "description": "Field to use as column headers"
+                    "description": "Field to use as column headers",
                 },
                 "values": {
                     "type": "string",
-                    "description": "Field to use as values in the pivot table"
+                    "description": "Field to use as values in the pivot table",
                 },
                 "aggfunc": {
                     "type": "string",
                     "enum": ["sum", "mean", "count", "min", "max", "first", "last"],
                     "description": "Aggregation function for duplicate combinations",
-                    "default": "sum"
+                    "default": "sum",
                 },
                 "fill_value": {
                     "description": "Value to replace missing entries",
-                    "default": 0
-                }
+                    "default": 0,
+                },
             },
-            "required": ["data", "index", "columns", "values"]
+            "required": ["data", "index", "columns", "values"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -745,7 +829,7 @@ class PivotDataTool(BaseTool):
                 "pivoted_data": [],
                 "original_count": 0,
                 "pivoted_shape": [0, 0],
-                "pivot_columns": []
+                "pivot_columns": [],
             }
         if not index:
             raise ValueError("index is required")
@@ -769,7 +853,7 @@ class PivotDataTool(BaseTool):
                 columns=columns,
                 values=values,
                 aggfunc=aggfunc,
-                fill_value=fill_value
+                fill_value=fill_value,
             )
 
             # Reset index to make index fields regular columns
@@ -777,8 +861,10 @@ class PivotDataTool(BaseTool):
 
             # Flatten column names if they are multi-level
             if isinstance(pivot_df.columns, pd.MultiIndex):
-                pivot_df.columns = [f"{col[0]}_{col[1]}" if col[1] != '' else col[0]
-                                   for col in pivot_df.columns]
+                pivot_df.columns = [
+                    f"{col[0]}_{col[1]}" if col[1] != "" else col[0]
+                    for col in pivot_df.columns
+                ]
             else:
                 pivot_df.columns = [str(col) for col in pivot_df.columns]
 
@@ -796,8 +882,10 @@ class PivotDataTool(BaseTool):
                     "value_field": values,
                     "aggregation": aggfunc,
                     "unique_column_values": df[columns].nunique(),
-                    "data_reduction_ratio": len(data) / len(pivoted_data) if len(pivoted_data) > 0 else 0
-                }
+                    "data_reduction_ratio": (
+                        len(data) / len(pivoted_data) if len(pivoted_data) > 0 else 0
+                    ),
+                },
             }
 
         except Exception as e:
@@ -820,7 +908,7 @@ class CleanDataTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to clean (list of dictionaries)"
+                    "description": "Data to clean (list of dictionaries)",
                 },
                 "operations": {
                     "type": "array",
@@ -830,25 +918,33 @@ class CleanDataTool(BaseTool):
                         "properties": {
                             "type": {
                                 "type": "string",
-                                "enum": ["trim", "lowercase", "uppercase", "remove_nulls", "fill_nulls",
-                                        "remove_duplicates", "standardize_text", "remove_special_chars"],
-                                "description": "Type of cleaning operation"
+                                "enum": [
+                                    "trim",
+                                    "lowercase",
+                                    "uppercase",
+                                    "remove_nulls",
+                                    "fill_nulls",
+                                    "remove_duplicates",
+                                    "standardize_text",
+                                    "remove_special_chars",
+                                ],
+                                "description": "Type of cleaning operation",
                             },
                             "fields": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "Fields to apply operation to (if not specified, applies to all applicable fields)"
+                                "description": "Fields to apply operation to (if not specified, applies to all applicable fields)",
                             },
                             "parameters": {
                                 "type": "object",
-                                "description": "Additional parameters for the operation"
-                            }
+                                "description": "Additional parameters for the operation",
+                            },
                         },
-                        "required": ["type"]
-                    }
-                }
+                        "required": ["type"],
+                    },
+                },
             },
-            "required": ["data", "operations"]
+            "required": ["data", "operations"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -864,7 +960,7 @@ class CleanDataTool(BaseTool):
                 "cleaned_data": [],
                 "original_count": 0,
                 "cleaned_count": 0,
-                "operations_applied": []
+                "operations_applied": [],
             }
 
         if not operations:
@@ -872,7 +968,7 @@ class CleanDataTool(BaseTool):
                 "cleaned_data": data,
                 "original_count": len(data),
                 "cleaned_count": len(data),
-                "operations_applied": []
+                "operations_applied": [],
             }
 
         df = pd.DataFrame(data)
@@ -886,12 +982,12 @@ class CleanDataTool(BaseTool):
                 parameters = operation.get("parameters", {})
 
                 # Apply operation
-                df, op_summary = self._apply_cleaning_operation(df, op_type, fields, parameters)
-                operations_applied.append({
-                    "type": op_type,
-                    "fields": fields,
-                    "summary": op_summary
-                })
+                df, op_summary = self._apply_cleaning_operation(
+                    df, op_type, fields, parameters
+                )
+                operations_applied.append(
+                    {"type": op_type, "fields": fields, "summary": op_summary}
+                )
 
             # Convert back to list of dictionaries
             cleaned_data = df.to_dict(orient="records")
@@ -904,32 +1000,41 @@ class CleanDataTool(BaseTool):
                 "cleaning_summary": {
                     "records_removed": original_count - len(cleaned_data),
                     "operations_count": len(operations_applied),
-                    "data_quality_improvement": self._calculate_quality_improvement(data, cleaned_data)
-                }
+                    "data_quality_improvement": self._calculate_quality_improvement(
+                        data, cleaned_data
+                    ),
+                },
             }
 
         except Exception as e:
             raise RuntimeError(f"Failed to clean data: {str(e)}")
 
-    def _apply_cleaning_operation(self, df: pd.DataFrame, op_type: str,
-                                 fields: List[str], parameters: Dict) -> tuple:
+    def _apply_cleaning_operation(
+        self, df: pd.DataFrame, op_type: str, fields: List[str], parameters: Dict
+    ) -> tuple:
         """Apply a single cleaning operation."""
         original_shape = df.shape
 
         if op_type == "trim":
-            target_fields = fields if fields else df.select_dtypes(include=['object']).columns
+            target_fields = (
+                fields if fields else df.select_dtypes(include=["object"]).columns
+            )
             for field in target_fields:
                 if field in df.columns:
                     df[field] = df[field].astype(str).str.strip()
 
         elif op_type == "lowercase":
-            target_fields = fields if fields else df.select_dtypes(include=['object']).columns
+            target_fields = (
+                fields if fields else df.select_dtypes(include=["object"]).columns
+            )
             for field in target_fields:
                 if field in df.columns:
                     df[field] = df[field].astype(str).str.lower()
 
         elif op_type == "uppercase":
-            target_fields = fields if fields else df.select_dtypes(include=['object']).columns
+            target_fields = (
+                fields if fields else df.select_dtypes(include=["object"]).columns
+            )
             for field in target_fields:
                 if field in df.columns:
                     df[field] = df[field].astype(str).str.upper()
@@ -952,21 +1057,29 @@ class CleanDataTool(BaseTool):
             df = df.drop_duplicates(subset=subset)
 
         elif op_type == "standardize_text":
-            target_fields = fields if fields else df.select_dtypes(include=['object']).columns
+            target_fields = (
+                fields if fields else df.select_dtypes(include=["object"]).columns
+            )
             for field in target_fields:
                 if field in df.columns:
                     # Standardize: strip, lowercase, remove extra spaces
                     df[field] = df[field].astype(str).str.strip().str.lower()
-                    df[field] = df[field].str.replace(r'\s+', ' ', regex=True)
+                    df[field] = df[field].str.replace(r"\s+", " ", regex=True)
 
         elif op_type == "remove_special_chars":
-            target_fields = fields if fields else df.select_dtypes(include=['object']).columns
-            pattern = parameters.get("pattern", r'[^a-zA-Z0-9\s]')
+            target_fields = (
+                fields if fields else df.select_dtypes(include=["object"]).columns
+            )
+            pattern = parameters.get("pattern", r"[^a-zA-Z0-9\s]")
             replacement = parameters.get("replacement", "")
 
             for field in target_fields:
                 if field in df.columns:
-                    df[field] = df[field].astype(str).str.replace(pattern, replacement, regex=True)
+                    df[field] = (
+                        df[field]
+                        .astype(str)
+                        .str.replace(pattern, replacement, regex=True)
+                    )
 
         else:
             raise ValueError(f"Unknown cleaning operation: {op_type}")
@@ -977,13 +1090,14 @@ class CleanDataTool(BaseTool):
             "records_before": original_shape[0],
             "records_after": new_shape[0],
             "records_affected": original_shape[0] - new_shape[0],
-            "fields_processed": len(fields) if fields else len(df.columns)
+            "fields_processed": len(fields) if fields else len(df.columns),
         }
 
         return df, summary
 
-    def _calculate_quality_improvement(self, original_data: List[Dict],
-                                     cleaned_data: List[Dict]) -> Dict:
+    def _calculate_quality_improvement(
+        self, original_data: List[Dict], cleaned_data: List[Dict]
+    ) -> Dict:
         """Calculate data quality improvement metrics."""
         if not original_data or not cleaned_data:
             return {"improvement_score": 0}
@@ -1002,12 +1116,24 @@ class CleanDataTool(BaseTool):
             "null_reduction": {
                 "before": int(original_nulls),
                 "after": int(cleaned_nulls),
-                "reduction_pct": ((original_nulls - cleaned_nulls) / original_nulls * 100) if original_nulls > 0 else 0
+                "reduction_pct": (
+                    ((original_nulls - cleaned_nulls) / original_nulls * 100)
+                    if original_nulls > 0
+                    else 0
+                ),
             },
             "duplicate_reduction": {
                 "before": original_duplicates,
                 "after": cleaned_duplicates,
-                "reduction_pct": ((original_duplicates - cleaned_duplicates) / original_duplicates * 100) if original_duplicates > 0 else 0
+                "reduction_pct": (
+                    (
+                        (original_duplicates - cleaned_duplicates)
+                        / original_duplicates
+                        * 100
+                    )
+                    if original_duplicates > 0
+                    else 0
+                ),
             },
-            "improvement_score": 85.0  # Simplified score - could be more sophisticated
+            "improvement_score": 85.0,  # Simplified score - could be more sophisticated
         }

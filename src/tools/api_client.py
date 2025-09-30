@@ -30,63 +30,63 @@ class FetchApiDataTool(BaseTool):
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "The API endpoint URL to fetch data from"
+                    "description": "The API endpoint URL to fetch data from",
                 },
                 "method": {
                     "type": "string",
                     "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"],
                     "default": "GET",
-                    "description": "HTTP method to use"
+                    "description": "HTTP method to use",
                 },
                 "headers": {
                     "type": "object",
                     "description": "Request headers as key-value pairs",
-                    "additionalProperties": {"type": "string"}
+                    "additionalProperties": {"type": "string"},
                 },
                 "params": {
                     "type": "object",
                     "description": "URL query parameters as key-value pairs",
-                    "additionalProperties": {"type": "string"}
+                    "additionalProperties": {"type": "string"},
                 },
                 "data": {
                     "type": "object",
-                    "description": "Request body data (for POST/PUT/PATCH)"
+                    "description": "Request body data (for POST/PUT/PATCH)",
                 },
                 "timeout": {
                     "type": "number",
                     "default": 30,
-                    "description": "Request timeout in seconds"
+                    "description": "Request timeout in seconds",
                 },
                 "auth_type": {
                     "type": "string",
                     "enum": ["none", "bearer", "basic", "api_key"],
                     "default": "none",
-                    "description": "Authentication type"
+                    "description": "Authentication type",
                 },
                 "auth_token": {
                     "type": "string",
-                    "description": "Authentication token/key (required if auth_type is not 'none')"
+                    "description": "Authentication token/key (required if auth_type is not 'none')",
                 },
                 "auth_username": {
                     "type": "string",
-                    "description": "Username for basic auth"
+                    "description": "Username for basic auth",
                 },
                 "auth_password": {
                     "type": "string",
-                    "description": "Password for basic auth"
+                    "description": "Password for basic auth",
                 },
                 "api_key_header": {
                     "type": "string",
                     "default": "X-API-Key",
-                    "description": "Header name for API key authentication"
+                    "description": "Header name for API key authentication",
                 },
                 "verify_ssl": {
                     "type": "boolean",
                     "default": True,
-                    "description": "Whether to verify SSL certificates"
-                }
+                    "description": "Whether to verify SSL certificates",
+                },
             },
-            "required": ["url"]
+            "required": ["url"],
         }
 
     def validate_input(self, **kwargs) -> Dict:
@@ -105,8 +105,12 @@ class FetchApiDataTool(BaseTool):
         auth_type = validated.get("auth_type", "none")
         if auth_type == "bearer" and not validated.get("auth_token"):
             raise ValueError("auth_token is required for bearer authentication")
-        elif auth_type == "basic" and not all([validated.get("auth_username"), validated.get("auth_password")]):
-            raise ValueError("auth_username and auth_password are required for basic authentication")
+        elif auth_type == "basic" and not all(
+            [validated.get("auth_username"), validated.get("auth_password")]
+        ):
+            raise ValueError(
+                "auth_username and auth_password are required for basic authentication"
+            )
         elif auth_type == "api_key" and not validated.get("auth_token"):
             raise ValueError("auth_token is required for API key authentication")
 
@@ -140,7 +144,7 @@ class FetchApiDataTool(BaseTool):
             "headers": headers,
             "params": params,
             "auth": auth,
-            "ssl": verify_ssl
+            "ssl": verify_ssl,
         }
 
         if method in ["POST", "PUT", "PATCH"] and data:
@@ -170,11 +174,13 @@ class FetchApiDataTool(BaseTool):
                         "data": response_data,
                         "url": str(response.url),
                         "method": method,
-                        "success": 200 <= response.status < 300
+                        "success": 200 <= response.status < 300,
                     }
 
                     if not result["success"]:
-                        self.logger.warning(f"API request failed with status {response.status}")
+                        self.logger.warning(
+                            f"API request failed with status {response.status}"
+                        )
 
                     return result
 
@@ -202,52 +208,52 @@ class MonitorApiTool(BaseTool):
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "The API endpoint URL to monitor"
+                    "description": "The API endpoint URL to monitor",
                 },
                 "method": {
                     "type": "string",
                     "enum": ["GET", "POST", "HEAD"],
                     "default": "GET",
-                    "description": "HTTP method for health check"
+                    "description": "HTTP method for health check",
                 },
                 "headers": {
                     "type": "object",
                     "description": "Request headers for the health check",
-                    "additionalProperties": {"type": "string"}
+                    "additionalProperties": {"type": "string"},
                 },
                 "timeout": {
                     "type": "number",
                     "default": 10,
-                    "description": "Request timeout in seconds"
+                    "description": "Request timeout in seconds",
                 },
                 "expected_status": {
                     "type": "array",
                     "items": {"type": "integer"},
                     "default": [200],
-                    "description": "List of expected successful status codes"
+                    "description": "List of expected successful status codes",
                 },
                 "check_content": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Whether to include response content in monitoring"
+                    "description": "Whether to include response content in monitoring",
                 },
                 "auth_type": {
                     "type": "string",
                     "enum": ["none", "bearer", "api_key"],
                     "default": "none",
-                    "description": "Authentication type"
+                    "description": "Authentication type",
                 },
                 "auth_token": {
                     "type": "string",
-                    "description": "Authentication token/key"
+                    "description": "Authentication token/key",
                 },
                 "api_key_header": {
                     "type": "string",
                     "default": "X-API-Key",
-                    "description": "Header name for API key authentication"
-                }
+                    "description": "Header name for API key authentication",
+                },
             },
-            "required": ["url"]
+            "required": ["url"],
         }
 
     @log_execution_time("monitor_api")
@@ -276,10 +282,12 @@ class MonitorApiTool(BaseTool):
                     method,
                     url,
                     headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=timeout)
+                    timeout=aiohttp.ClientTimeout(total=timeout),
                 ) as response:
                     end_time = time.time()
-                    response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+                    response_time = (
+                        end_time - start_time
+                    ) * 1000  # Convert to milliseconds
 
                     # Get content if requested
                     content = None
@@ -288,7 +296,7 @@ class MonitorApiTool(BaseTool):
                         content = await response.text()
                         content_length = len(content)
                     else:
-                        content_length = int(response.headers.get('content-length', 0))
+                        content_length = int(response.headers.get("content-length", 0))
 
                     is_healthy = response.status in expected_status
 
@@ -299,13 +307,17 @@ class MonitorApiTool(BaseTool):
                         "is_healthy": is_healthy,
                         "content_length": content_length,
                         "headers": dict(response.headers),
-                        "timestamp": time.time()
+                        "timestamp": time.time(),
                     }
 
                     if check_content and content:
-                        result["content"] = content[:1000]  # Limit content to first 1000 chars
+                        result["content"] = content[
+                            :1000
+                        ]  # Limit content to first 1000 chars
 
-                    self.logger.info(f"API monitor: {url} - Status: {response.status}, Response time: {response_time:.2f}ms")
+                    self.logger.info(
+                        f"API monitor: {url} - Status: {response.status}, Response time: {response_time:.2f}ms"
+                    )
 
                     return result
 
@@ -319,7 +331,7 @@ class MonitorApiTool(BaseTool):
                 "response_time_ms": round(response_time, 2),
                 "is_healthy": False,
                 "error": f"Timeout after {timeout} seconds",
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
         except Exception as e:
@@ -332,7 +344,7 @@ class MonitorApiTool(BaseTool):
                 "response_time_ms": round(response_time, 2),
                 "is_healthy": False,
                 "error": str(e),
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
 
@@ -357,105 +369,113 @@ class BatchApiCallsTool(BaseTool):
                         "properties": {
                             "id": {
                                 "type": "string",
-                                "description": "Unique identifier for this request"
+                                "description": "Unique identifier for this request",
                             },
                             "url": {
                                 "type": "string",
-                                "description": "The API endpoint URL"
+                                "description": "The API endpoint URL",
                             },
                             "method": {
                                 "type": "string",
-                                "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+                                "enum": [
+                                    "GET",
+                                    "POST",
+                                    "PUT",
+                                    "PATCH",
+                                    "DELETE",
+                                    "HEAD",
+                                    "OPTIONS",
+                                ],
                                 "default": "GET",
-                                "description": "HTTP method"
+                                "description": "HTTP method",
                             },
                             "headers": {
                                 "type": "object",
                                 "description": "Request headers",
-                                "additionalProperties": {"type": "string"}
+                                "additionalProperties": {"type": "string"},
                             },
                             "params": {
                                 "type": "object",
                                 "description": "URL query parameters",
-                                "additionalProperties": {"type": "string"}
+                                "additionalProperties": {"type": "string"},
                             },
-                            "data": {
-                                "description": "Request body data (any format)"
-                            },
+                            "data": {"description": "Request body data (any format)"},
                             "timeout": {
                                 "type": "number",
-                                "description": "Custom timeout for this specific request"
+                                "description": "Custom timeout for this specific request",
                             },
                             "expected_status": {
                                 "type": "array",
                                 "items": {"type": "integer"},
-                                "description": "Expected status codes for this request"
-                            }
+                                "description": "Expected status codes for this request",
+                            },
                         },
-                        "required": ["id", "url"]
+                        "required": ["id", "url"],
                     },
-                    "description": "List of API requests to execute"
+                    "description": "List of API requests to execute",
                 },
                 "max_concurrent": {
                     "type": "integer",
                     "default": 5,
                     "minimum": 1,
                     "maximum": 50,
-                    "description": "Maximum number of concurrent requests"
+                    "description": "Maximum number of concurrent requests",
                 },
                 "default_timeout": {
                     "type": "number",
                     "default": 30,
-                    "description": "Default timeout in seconds for requests without custom timeout"
+                    "description": "Default timeout in seconds for requests without custom timeout",
                 },
                 "auth_type": {
                     "type": "string",
                     "enum": ["none", "bearer", "basic", "api_key"],
                     "default": "none",
-                    "description": "Authentication type (applied to all requests)"
+                    "description": "Authentication type (applied to all requests)",
                 },
                 "auth_token": {
                     "type": "string",
-                    "description": "Authentication token/key"
+                    "description": "Authentication token/key",
                 },
                 "auth_username": {
                     "type": "string",
-                    "description": "Username for basic auth"
+                    "description": "Username for basic auth",
                 },
                 "auth_password": {
                     "type": "string",
-                    "description": "Password for basic auth"
+                    "description": "Password for basic auth",
                 },
                 "api_key_header": {
                     "type": "string",
                     "default": "X-API-Key",
-                    "description": "Header name for API key authentication"
+                    "description": "Header name for API key authentication",
                 },
                 "stop_on_error": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Whether to stop batch execution on first error"
+                    "description": "Whether to stop batch execution on first error",
                 },
                 "retry_failed": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Whether to retry failed requests once"
+                    "description": "Whether to retry failed requests once",
                 },
                 "aggregate_results": {
                     "type": "boolean",
                     "default": True,
-                    "description": "Whether to provide aggregated statistics and analysis"
+                    "description": "Whether to provide aggregated statistics and analysis",
                 },
                 "include_response_data": {
                     "type": "boolean",
                     "default": True,
-                    "description": "Whether to include full response data (set false for large responses)"
-                }
+                    "description": "Whether to include full response data (set false for large responses)",
+                },
             },
-            "required": ["requests"]
+            "required": ["requests"],
         }
 
-    async def _execute_single_request(self, request: Dict, auth_config: Dict, default_timeout: float) -> Dict:
+    async def _execute_single_request(
+        self, request: Dict, auth_config: Dict, default_timeout: float
+    ) -> Dict:
         """Execute a single API request with full flexibility."""
         req_id = request["id"]
         url = request["url"]
@@ -471,8 +491,14 @@ class BatchApiCallsTool(BaseTool):
         auth_type = auth_config.get("auth_type", "none")
         if auth_type == "bearer" and auth_config.get("auth_token"):
             headers["Authorization"] = f"Bearer {auth_config['auth_token']}"
-        elif auth_type == "basic" and auth_config.get("auth_username") and auth_config.get("auth_password"):
-            auth = aiohttp.BasicAuth(auth_config["auth_username"], auth_config["auth_password"])
+        elif (
+            auth_type == "basic"
+            and auth_config.get("auth_username")
+            and auth_config.get("auth_password")
+        ):
+            auth = aiohttp.BasicAuth(
+                auth_config["auth_username"], auth_config["auth_password"]
+            )
         elif auth_type == "api_key" and auth_config.get("auth_token"):
             api_key_header = auth_config.get("api_key_header", "X-API-Key")
             headers[api_key_header] = auth_config["auth_token"]
@@ -485,7 +511,7 @@ class BatchApiCallsTool(BaseTool):
                     "timeout": aiohttp.ClientTimeout(total=timeout),
                     "headers": headers,
                     "params": params,
-                    "auth": auth
+                    "auth": auth,
                 }
 
                 if method in ["POST", "PUT", "PATCH"] and data is not None:
@@ -499,7 +525,7 @@ class BatchApiCallsTool(BaseTool):
 
                     # Get response data
                     try:
-                        if response.content_type == 'application/json':
+                        if response.content_type == "application/json":
                             response_data = await response.json()
                         else:
                             response_data = await response.text()
@@ -517,7 +543,7 @@ class BatchApiCallsTool(BaseTool):
                         "data": response_data,
                         "response_time_ms": round(response_time, 2),
                         "headers": dict(response.headers),
-                        "error": None
+                        "error": None,
                     }
 
         except Exception as e:
@@ -531,7 +557,7 @@ class BatchApiCallsTool(BaseTool):
                 "data": None,
                 "response_time_ms": round(response_time, 2),
                 "headers": {},
-                "error": str(e)
+                "error": str(e),
             }
 
     @log_execution_time("batch_api_calls")
@@ -551,17 +577,21 @@ class BatchApiCallsTool(BaseTool):
             "auth_token": kwargs.get("auth_token"),
             "auth_username": kwargs.get("auth_username"),
             "auth_password": kwargs.get("auth_password"),
-            "api_key_header": kwargs.get("api_key_header", "X-API-Key")
+            "api_key_header": kwargs.get("api_key_header", "X-API-Key"),
         }
 
-        self.logger.info(f"Executing batch of {len(requests)} API requests with max_concurrent={max_concurrent}")
+        self.logger.info(
+            f"Executing batch of {len(requests)} API requests with max_concurrent={max_concurrent}"
+        )
 
         # Create semaphore for concurrency control
         semaphore = asyncio.Semaphore(max_concurrent)
 
         async def bounded_request(request):
             async with semaphore:
-                return await self._execute_single_request(request, auth_config, default_timeout)
+                return await self._execute_single_request(
+                    request, auth_config, default_timeout
+                )
 
         # Execute requests
         results = []
@@ -574,7 +604,9 @@ class BatchApiCallsTool(BaseTool):
                     result = await bounded_request(request)
                     results.append(result)
                     if not result["success"]:
-                        self.logger.warning(f"Stopping batch execution due to error in request {result['id']}")
+                        self.logger.warning(
+                            f"Stopping batch execution due to error in request {result['id']}"
+                        )
                         break
             else:
                 # Execute all requests concurrently
@@ -589,10 +621,14 @@ class BatchApiCallsTool(BaseTool):
                     retry_tasks = []
                     for failed_result in failed_requests:
                         # Find original request
-                        original_request = next(r for r in requests if r["id"] == failed_result["id"])
+                        original_request = next(
+                            r for r in requests if r["id"] == failed_result["id"]
+                        )
                         retry_tasks.append(bounded_request(original_request))
 
-                    retry_results = await asyncio.gather(*retry_tasks, return_exceptions=False)
+                    retry_results = await asyncio.gather(
+                        *retry_tasks, return_exceptions=False
+                    )
 
                     # Replace failed results with retry results
                     for i, result in enumerate(results):
@@ -608,7 +644,9 @@ class BatchApiCallsTool(BaseTool):
             if not include_response_data:
                 for result in final_results:
                     if "data" in result:
-                        result["data"] = f"<data truncated - {len(str(result['data']))} chars>"
+                        result["data"] = (
+                            f"<data truncated - {len(str(result['data']))} chars>"
+                        )
 
             response: Dict[str, Any] = {"results": final_results}
 
@@ -623,9 +661,22 @@ class BatchApiCallsTool(BaseTool):
                     if status:
                         status_codes[status] = status_codes.get(status, 0) + 1
 
-                avg_response_time = sum(r.get("response_time_ms", 0) for r in results) / len(results) if results else 0
-                max_response_time = max((r.get("response_time_ms", 0) for r in results), default=0)
-                min_response_time = min((r.get("response_time_ms", 0) for r in results if r.get("response_time_ms", 0) > 0), default=0)
+                avg_response_time = (
+                    sum(r.get("response_time_ms", 0) for r in results) / len(results)
+                    if results
+                    else 0
+                )
+                max_response_time = max(
+                    (r.get("response_time_ms", 0) for r in results), default=0
+                )
+                min_response_time = min(
+                    (
+                        r.get("response_time_ms", 0)
+                        for r in results
+                        if r.get("response_time_ms", 0) > 0
+                    ),
+                    default=0,
+                )
 
                 summary = {
                     "total_requests": len(requests),
@@ -638,7 +689,11 @@ class BatchApiCallsTool(BaseTool):
                     "max_response_time_ms": round(max_response_time, 2),
                     "min_response_time_ms": round(min_response_time, 2),
                     "status_code_distribution": status_codes,
-                    "error_summary": [{"id": r["id"], "error": r["error"]} for r in failed if r.get("error")]
+                    "error_summary": [
+                        {"id": r["id"], "error": r["error"]}
+                        for r in failed
+                        if r.get("error")
+                    ],
                 }
 
                 response["summary"] = summary
@@ -666,92 +721,102 @@ class ApiAuthTool(BaseTool):
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "API endpoint URL to test authentication against"
+                    "description": "API endpoint URL to test authentication against",
                 },
                 "auth_type": {
                     "type": "string",
-                    "enum": ["bearer", "basic", "api_key", "oauth2", "custom_header", "query_param"],
-                    "description": "Type of authentication to test"
+                    "enum": [
+                        "bearer",
+                        "basic",
+                        "api_key",
+                        "oauth2",
+                        "custom_header",
+                        "query_param",
+                    ],
+                    "description": "Type of authentication to test",
                 },
                 "auth_token": {
                     "type": "string",
-                    "description": "Authentication token (for bearer, api_key, oauth2)"
+                    "description": "Authentication token (for bearer, api_key, oauth2)",
                 },
                 "auth_username": {
                     "type": "string",
-                    "description": "Username (for basic auth)"
+                    "description": "Username (for basic auth)",
                 },
                 "auth_password": {
                     "type": "string",
-                    "description": "Password (for basic auth)"
+                    "description": "Password (for basic auth)",
                 },
                 "api_key_header": {
                     "type": "string",
                     "default": "X-API-Key",
-                    "description": "Header name for API key authentication"
+                    "description": "Header name for API key authentication",
                 },
                 "custom_header_name": {
                     "type": "string",
-                    "description": "Custom header name for custom_header auth type"
+                    "description": "Custom header name for custom_header auth type",
                 },
                 "custom_header_value": {
                     "type": "string",
-                    "description": "Custom header value for custom_header auth type"
+                    "description": "Custom header value for custom_header auth type",
                 },
                 "query_param_name": {
                     "type": "string",
                     "default": "api_key",
-                    "description": "Query parameter name for query_param auth type"
+                    "description": "Query parameter name for query_param auth type",
                 },
                 "oauth2_client_id": {
                     "type": "string",
-                    "description": "OAuth2 client ID"
+                    "description": "OAuth2 client ID",
                 },
                 "oauth2_client_secret": {
                     "type": "string",
-                    "description": "OAuth2 client secret"
+                    "description": "OAuth2 client secret",
                 },
                 "oauth2_token_url": {
                     "type": "string",
-                    "description": "OAuth2 token endpoint URL"
+                    "description": "OAuth2 token endpoint URL",
                 },
                 "oauth2_scope": {
                     "type": "string",
-                    "description": "OAuth2 scope (optional)"
+                    "description": "OAuth2 scope (optional)",
                 },
                 "test_endpoint": {
                     "type": "string",
-                    "description": "Specific endpoint to test (if different from url)"
+                    "description": "Specific endpoint to test (if different from url)",
                 },
                 "test_methods": {
                     "type": "array",
-                    "items": {"type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"]},
+                    "items": {
+                        "type": "string",
+                        "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+                    },
                     "default": ["GET"],
-                    "description": "HTTP methods to test with authentication"
+                    "description": "HTTP methods to test with authentication",
                 },
                 "expected_status": {
                     "type": "array",
                     "items": {"type": "integer"},
                     "default": [200],
-                    "description": "Expected successful status codes"
+                    "description": "Expected successful status codes",
                 },
                 "test_without_auth": {
                     "type": "boolean",
                     "default": True,
-                    "description": "Whether to test the same endpoint without authentication for comparison"
+                    "description": "Whether to test the same endpoint without authentication for comparison",
                 },
                 "validate_token_expiry": {
                     "type": "boolean",
                     "default": False,
-                    "description": "Whether to validate token expiry (for supported auth types)"
+                    "description": "Whether to validate token expiry (for supported auth types)",
                 },
                 "detailed_analysis": {
                     "type": "boolean",
                     "default": True,
-                    "description": "Whether to provide detailed authentication analysis"
-                }
+                    "description": "Whether to provide detailed authentication analysis",
+                },
             },
-            "required": ["url", "auth_type"]
+            "required": ["url", "auth_type"],
         }
 
     async def _test_oauth2_auth(self, **kwargs) -> Dict:
@@ -766,7 +831,7 @@ class ApiAuthTool(BaseTool):
                 data = {
                     "grant_type": "client_credentials",
                     "client_id": client_id,
-                    "client_secret": client_secret
+                    "client_secret": client_secret,
                 }
                 if scope:
                     data["scope"] = scope
@@ -774,7 +839,7 @@ class ApiAuthTool(BaseTool):
                 async with session.post(
                     token_url,
                     data=data,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
                 ) as response:
                     if response.status == 200:
                         token_data = await response.json()
@@ -784,22 +849,24 @@ class ApiAuthTool(BaseTool):
                             "access_token": token_data.get("access_token", ""),
                             "expires_in": token_data.get("expires_in"),
                             "scope": token_data.get("scope"),
-                            "raw_response": token_data
+                            "raw_response": token_data,
                         }
                     else:
                         error_text = await response.text()
                         return {
                             "success": False,
-                            "error": f"Token request failed with status {response.status}: {error_text}"
+                            "error": f"Token request failed with status {response.status}: {error_text}",
                         }
 
         except Exception as e:
             return {
                 "success": False,
-                "error": f"OAuth2 authentication failed: {str(e)}"
+                "error": f"OAuth2 authentication failed: {str(e)}",
             }
 
-    async def _test_endpoint_with_auth(self, url: str, method: str, headers: Dict, auth, expected_status: List[int]) -> Dict:
+    async def _test_endpoint_with_auth(
+        self, url: str, method: str, headers: Dict, auth, expected_status: List[int]
+    ) -> Dict:
         """Test endpoint with authentication."""
         start_time = time.time()
 
@@ -810,13 +877,13 @@ class ApiAuthTool(BaseTool):
                     url,
                     headers=headers,
                     auth=auth,
-                    timeout=aiohttp.ClientTimeout(total=30)
+                    timeout=aiohttp.ClientTimeout(total=30),
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
 
                     # Get response info
                     try:
-                        if response.content_type == 'application/json':
+                        if response.content_type == "application/json":
                             response_data = await response.json()
                         else:
                             response_data = await response.text()
@@ -831,8 +898,12 @@ class ApiAuthTool(BaseTool):
                         "is_authenticated": is_authenticated,
                         "response_time_ms": round(response_time, 2),
                         "response_headers": dict(response.headers),
-                        "response_data": response_data[:500] if isinstance(response_data, str) else response_data,
-                        "error": None
+                        "response_data": (
+                            response_data[:500]
+                            if isinstance(response_data, str)
+                            else response_data
+                        ),
+                        "error": None,
                     }
 
         except Exception as e:
@@ -844,7 +915,7 @@ class ApiAuthTool(BaseTool):
                 "response_time_ms": round(response_time, 2),
                 "response_headers": {},
                 "response_data": None,
-                "error": str(e)
+                "error": str(e),
             }
 
     @log_execution_time("api_auth")
@@ -867,7 +938,7 @@ class ApiAuthTool(BaseTool):
             "timestamp": time.time(),
             "auth_tests": [],
             "oauth_details": None,
-            "analysis": {}
+            "analysis": {},
         }
 
         # Handle OAuth2 token acquisition first
@@ -884,32 +955,44 @@ class ApiAuthTool(BaseTool):
 
         if auth_type == "bearer":
             if not kwargs.get("auth_token"):
-                results["analysis"]["error"] = "auth_token is required for bearer authentication"
+                results["analysis"][
+                    "error"
+                ] = "auth_token is required for bearer authentication"
                 return results
             auth_headers["Authorization"] = f"Bearer {kwargs['auth_token']}"
 
         elif auth_type == "basic":
             if not all([kwargs.get("auth_username"), kwargs.get("auth_password")]):
-                results["analysis"]["error"] = "auth_username and auth_password are required for basic authentication"
+                results["analysis"][
+                    "error"
+                ] = "auth_username and auth_password are required for basic authentication"
                 return results
             auth = aiohttp.BasicAuth(kwargs["auth_username"], kwargs["auth_password"])
 
         elif auth_type == "api_key":
             if not kwargs.get("auth_token"):
-                results["analysis"]["error"] = "auth_token is required for API key authentication"
+                results["analysis"][
+                    "error"
+                ] = "auth_token is required for API key authentication"
                 return results
             api_key_header = kwargs.get("api_key_header", "X-API-Key")
             auth_headers[api_key_header] = kwargs["auth_token"]
 
         elif auth_type == "custom_header":
-            if not all([kwargs.get("custom_header_name"), kwargs.get("custom_header_value")]):
-                results["analysis"]["error"] = "custom_header_name and custom_header_value are required"
+            if not all(
+                [kwargs.get("custom_header_name"), kwargs.get("custom_header_value")]
+            ):
+                results["analysis"][
+                    "error"
+                ] = "custom_header_name and custom_header_value are required"
                 return results
             auth_headers[kwargs["custom_header_name"]] = kwargs["custom_header_value"]
 
         elif auth_type == "query_param":
             if not kwargs.get("auth_token"):
-                results["analysis"]["error"] = "auth_token is required for query parameter authentication"
+                results["analysis"][
+                    "error"
+                ] = "auth_token is required for query parameter authentication"
                 return results
             param_name = kwargs.get("query_param_name", "api_key")
             test_endpoint = f"{test_endpoint}{'&' if '?' in test_endpoint else '?'}{param_name}={kwargs['auth_token']}"
@@ -936,27 +1019,44 @@ class ApiAuthTool(BaseTool):
 
         # Provide detailed analysis if requested
         if detailed_analysis:
-            auth_tests = [t for t in results["auth_tests"] if t["auth_used"] == auth_type]
-            no_auth_tests = [t for t in results["auth_tests"] if t["auth_used"] == "none"]
+            auth_tests = [
+                t for t in results["auth_tests"] if t["auth_used"] == auth_type
+            ]
+            no_auth_tests = [
+                t for t in results["auth_tests"] if t["auth_used"] == "none"
+            ]
 
             analysis = {
-                "authentication_working": any(t["is_authenticated"] for t in auth_tests),
+                "authentication_working": any(
+                    t["is_authenticated"] for t in auth_tests
+                ),
                 "methods_tested": test_methods,
-                "successful_methods": [t["method"] for t in auth_tests if t["is_authenticated"]],
-                "failed_methods": [t["method"] for t in auth_tests if not t["is_authenticated"]],
-                "average_response_time_ms": sum(t["response_time_ms"] for t in auth_tests) / len(auth_tests) if auth_tests else 0,
+                "successful_methods": [
+                    t["method"] for t in auth_tests if t["is_authenticated"]
+                ],
+                "failed_methods": [
+                    t["method"] for t in auth_tests if not t["is_authenticated"]
+                ],
+                "average_response_time_ms": (
+                    sum(t["response_time_ms"] for t in auth_tests) / len(auth_tests)
+                    if auth_tests
+                    else 0
+                ),
             }
 
             if no_auth_tests:
-                analysis["requires_authentication"] = not any(t["is_authenticated"] for t in no_auth_tests)
-                analysis["auth_improves_access"] = (
-                    any(t["is_authenticated"] for t in auth_tests) and
-                    not any(t["is_authenticated"] for t in no_auth_tests)
+                analysis["requires_authentication"] = not any(
+                    t["is_authenticated"] for t in no_auth_tests
                 )
+                analysis["auth_improves_access"] = any(
+                    t["is_authenticated"] for t in auth_tests
+                ) and not any(t["is_authenticated"] for t in no_auth_tests)
 
             # Token validation for supported types
             if validate_token_expiry and auth_type in ["bearer", "oauth2"]:
-                analysis["token_validation"] = self._validate_token_format(kwargs.get("auth_token", ""))
+                analysis["token_validation"] = self._validate_token_format(
+                    kwargs.get("auth_token", "")
+                )
 
             results["analysis"] = analysis
 
@@ -968,7 +1068,7 @@ class ApiAuthTool(BaseTool):
             "token_length": len(token),
             "appears_base64": token.replace("-", "+").replace("_", "/").isalnum(),
             "contains_periods": "." in token,  # Might be JWT
-            "estimated_type": "unknown"
+            "estimated_type": "unknown",
         }
 
         if validation["contains_periods"] and len(token.split(".")) == 3:

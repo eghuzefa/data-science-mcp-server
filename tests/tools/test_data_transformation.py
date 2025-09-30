@@ -8,9 +8,16 @@ from unittest.mock import patch
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from tools.data_transformation import FilterDataTool, AggregateDataTool, JoinDataTool, PivotDataTool, CleanDataTool
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+
+from tools.data_transformation import (
+    FilterDataTool,
+    AggregateDataTool,
+    JoinDataTool,
+    PivotDataTool,
+    CleanDataTool,
+)
 
 
 class TestFilterDataTool:
@@ -27,9 +34,14 @@ class TestFilterDataTool:
         return [
             {"name": "Alice", "age": 25, "department": "Engineering", "salary": 75000},
             {"name": "Bob", "age": 30, "department": "Marketing", "salary": 65000},
-            {"name": "Charlie", "age": 35, "department": "Engineering", "salary": 85000},
+            {
+                "name": "Charlie",
+                "age": 35,
+                "department": "Engineering",
+                "salary": 85000,
+            },
             {"name": "Diana", "age": 28, "department": "Sales", "salary": 70000},
-            {"name": "Eve", "age": 32, "department": "Marketing", "salary": 72000}
+            {"name": "Eve", "age": 32, "department": "Marketing", "salary": 72000},
         ]
 
     def test_tool_properties(self, tool):
@@ -43,9 +55,7 @@ class TestFilterDataTool:
     @pytest.mark.asyncio
     async def test_filter_simple_condition(self, tool, sample_data):
         """Test filtering with a simple condition."""
-        conditions = [
-            {"field": "age", "operator": ">", "value": 30}
-        ]
+        conditions = [{"field": "age", "operator": ">", "value": 30}]
 
         result = await tool.safe_execute(data=sample_data, conditions=conditions)
 
@@ -61,13 +71,11 @@ class TestFilterDataTool:
         """Test filtering with multiple AND conditions."""
         conditions = [
             {"field": "age", "operator": ">=", "value": 30},
-            {"field": "department", "operator": "==", "value": "Engineering"}
+            {"field": "department", "operator": "==", "value": "Engineering"},
         ]
 
         result = await tool.safe_execute(
-            data=sample_data,
-            conditions=conditions,
-            logic="AND"
+            data=sample_data, conditions=conditions, logic="AND"
         )
 
         assert result["success"] is True
@@ -82,13 +90,11 @@ class TestFilterDataTool:
         """Test filtering with multiple OR conditions."""
         conditions = [
             {"field": "department", "operator": "==", "value": "Engineering"},
-            {"field": "salary", "operator": ">=", "value": 80000}
+            {"field": "salary", "operator": ">=", "value": 80000},
         ]
 
         result = await tool.safe_execute(
-            data=sample_data,
-            conditions=conditions,
-            logic="OR"
+            data=sample_data, conditions=conditions, logic="OR"
         )
 
         assert result["success"] is True
@@ -103,9 +109,7 @@ class TestFilterDataTool:
     @pytest.mark.asyncio
     async def test_filter_string_operations(self, tool, sample_data):
         """Test filtering with string operations."""
-        conditions = [
-            {"field": "name", "operator": "contains", "value": "e"}
-        ]
+        conditions = [{"field": "name", "operator": "contains", "value": "e"}]
 
         result = await tool.safe_execute(data=sample_data, conditions=conditions)
 
@@ -135,9 +139,7 @@ class TestFilterDataTool:
     @pytest.mark.asyncio
     async def test_filter_no_matches(self, tool, sample_data):
         """Test filtering with no matching records."""
-        conditions = [
-            {"field": "age", "operator": ">", "value": 100}
-        ]
+        conditions = [{"field": "age", "operator": ">", "value": 100}]
 
         result = await tool.safe_execute(data=sample_data, conditions=conditions)
 
@@ -163,7 +165,7 @@ class TestAggregateDataTool:
             {"department": "Engineering", "salary": 85000, "age": 35, "bonus": 7000},
             {"department": "Marketing", "salary": 65000, "age": 30, "bonus": 4000},
             {"department": "Marketing", "salary": 72000, "age": 32, "bonus": 5500},
-            {"department": "Sales", "salary": 70000, "age": 28, "bonus": 4500}
+            {"department": "Sales", "salary": 70000, "age": 28, "bonus": 4500},
         ]
 
     def test_tool_properties(self, tool):
@@ -179,13 +181,11 @@ class TestAggregateDataTool:
         """Test simple group by aggregation."""
         aggregations = [
             {"field": "salary", "operation": "mean"},
-            {"field": "age", "operation": "max"}
+            {"field": "age", "operation": "max"},
         ]
 
         result = await tool.safe_execute(
-            data=sample_data,
-            group_by=["department"],
-            aggregations=aggregations
+            data=sample_data, group_by=["department"], aggregations=aggregations
         )
 
         assert result["success"] is True
@@ -198,9 +198,11 @@ class TestAggregateDataTool:
         assert "Sales" in departments
 
         # Check aggregation results - tool uses original field names
-        eng_record = next(r for r in aggregated_data if r["department"] == "Engineering")
+        eng_record = next(
+            r for r in aggregated_data if r["department"] == "Engineering"
+        )
         assert "salary" in eng_record  # mean aggregation result
-        assert "age" in eng_record     # max aggregation result
+        assert "age" in eng_record  # max aggregation result
 
     @pytest.mark.asyncio
     async def test_aggregate_multiple_functions(self, tool, sample_data):
@@ -209,13 +211,11 @@ class TestAggregateDataTool:
             {"field": "salary", "operation": "sum"},
             {"field": "salary", "operation": "count"},
             {"field": "salary", "operation": "min"},
-            {"field": "salary", "operation": "max"}
+            {"field": "salary", "operation": "max"},
         ]
 
         result = await tool.safe_execute(
-            data=sample_data,
-            group_by=["department"],
-            aggregations=aggregations
+            data=sample_data, group_by=["department"], aggregations=aggregations
         )
 
         assert result["success"] is True
@@ -234,13 +234,10 @@ class TestAggregateDataTool:
         """Test aggregation without grouping."""
         aggregations = [
             {"field": "salary", "operation": "mean"},
-            {"field": "age", "operation": "median"}
+            {"field": "age", "operation": "median"},
         ]
 
-        result = await tool.safe_execute(
-            data=sample_data,
-            aggregations=aggregations
-        )
+        result = await tool.safe_execute(data=sample_data, aggregations=aggregations)
 
         assert result["success"] is True
         aggregated_data = result["result"]["aggregated_data"]
@@ -248,7 +245,7 @@ class TestAggregateDataTool:
         # Should return a single record with overall aggregations
         assert len(aggregated_data) == 1
         assert "salary" in aggregated_data[0]  # overall mean
-        assert "age" in aggregated_data[0]     # overall median
+        assert "age" in aggregated_data[0]  # overall median
 
     @pytest.mark.asyncio
     async def test_aggregate_multiple_groupby(self, tool):
@@ -257,15 +254,13 @@ class TestAggregateDataTool:
             {"dept": "Eng", "level": "Junior", "salary": 60000},
             {"dept": "Eng", "level": "Senior", "salary": 90000},
             {"dept": "Sales", "level": "Junior", "salary": 50000},
-            {"dept": "Sales", "level": "Senior", "salary": 80000}
+            {"dept": "Sales", "level": "Senior", "salary": 80000},
         ]
 
         aggregations = [{"field": "salary", "operation": "mean"}]
 
         result = await tool.safe_execute(
-            data=data,
-            group_by=["dept", "level"],
-            aggregations=aggregations
+            data=data, group_by=["dept", "level"], aggregations=aggregations
         )
 
         assert result["success"] is True
@@ -289,13 +284,13 @@ class TestJoinDataTool:
         employees = [
             {"id": 1, "name": "Alice", "dept_id": 10},
             {"id": 2, "name": "Bob", "dept_id": 20},
-            {"id": 3, "name": "Charlie", "dept_id": 10}
+            {"id": 3, "name": "Charlie", "dept_id": 10},
         ]
 
         departments = [
             {"dept_id": 10, "dept_name": "Engineering", "budget": 500000},
             {"dept_id": 20, "dept_name": "Marketing", "budget": 300000},
-            {"dept_id": 30, "dept_name": "Sales", "budget": 400000}
+            {"dept_id": 30, "dept_name": "Sales", "budget": 400000},
         ]
 
         return employees, departments
@@ -318,7 +313,7 @@ class TestJoinDataTool:
             right_data=departments,
             left_on=["dept_id"],
             right_on=["dept_id"],
-            join_type="inner"
+            join_type="inner",
         )
 
         assert result["success"] is True
@@ -344,7 +339,7 @@ class TestJoinDataTool:
             right_data=departments,
             left_on=["dept_id"],
             right_on=["dept_id"],
-            join_type="left"
+            join_type="left",
         )
 
         assert result["success"] is True
@@ -356,7 +351,10 @@ class TestJoinDataTool:
         # Dave should have null department info
         dave_record = next(r for r in joined_data if r["name"] == "Dave")
         import pandas as pd
-        assert pd.isna(dave_record["dept_name"])  # pandas returns NaN for missing values
+
+        assert pd.isna(
+            dave_record["dept_name"]
+        )  # pandas returns NaN for missing values
 
     @pytest.mark.asyncio
     async def test_right_join(self, tool, sample_datasets):
@@ -368,7 +366,7 @@ class TestJoinDataTool:
             right_data=departments,
             left_on=["dept_id"],
             right_on=["dept_id"],
-            join_type="right"
+            join_type="right",
         )
 
         assert result["success"] is True
@@ -391,7 +389,7 @@ class TestJoinDataTool:
             right_data=departments,
             left_on=["dept_id"],
             right_on=["dept_id"],
-            join_type="outer"
+            join_type="outer",
         )
 
         assert result["success"] is True
@@ -409,12 +407,12 @@ class TestJoinDataTool:
         """Test joining on multiple columns."""
         data1 = [
             {"year": 2023, "quarter": 1, "sales": 100000},
-            {"year": 2023, "quarter": 2, "sales": 120000}
+            {"year": 2023, "quarter": 2, "sales": 120000},
         ]
 
         data2 = [
             {"year": 2023, "quarter": 1, "costs": 80000},
-            {"year": 2023, "quarter": 2, "costs": 90000}
+            {"year": 2023, "quarter": 2, "costs": 90000},
         ]
 
         result = await tool.safe_execute(
@@ -422,7 +420,7 @@ class TestJoinDataTool:
             right_data=data2,
             left_on=["year", "quarter"],
             right_on=["year", "quarter"],
-            join_type="inner"
+            join_type="inner",
         )
 
         assert result["success"] is True
@@ -450,7 +448,7 @@ class TestPivotDataTool:
             {"region": "North", "product": "B", "quarter": "Q1", "sales": 80},
             {"region": "South", "product": "A", "quarter": "Q1", "sales": 90},
             {"region": "South", "product": "A", "quarter": "Q2", "sales": 110},
-            {"region": "South", "product": "B", "quarter": "Q1", "sales": 70}
+            {"region": "South", "product": "B", "quarter": "Q1", "sales": 70},
         ]
 
     def test_tool_properties(self, tool):
@@ -469,7 +467,7 @@ class TestPivotDataTool:
             index=["region"],
             columns="quarter",
             values="sales",
-            aggfunc="sum"
+            aggfunc="sum",
         )
 
         assert result["success"] is True
@@ -491,7 +489,7 @@ class TestPivotDataTool:
         data = [
             {"region": "North", "quarter": "Q1", "sales": 100, "profit": 20},
             {"region": "North", "quarter": "Q2", "sales": 120, "profit": 25},
-            {"region": "South", "quarter": "Q1", "sales": 90, "profit": 18}
+            {"region": "South", "quarter": "Q1", "sales": 90, "profit": 18},
         ]
 
         result = await tool.safe_execute(
@@ -499,7 +497,7 @@ class TestPivotDataTool:
             index=["region"],
             columns="quarter",
             values="sales",
-            aggfunc="sum"
+            aggfunc="sum",
         )
 
         assert result["success"] is True
@@ -516,7 +514,7 @@ class TestPivotDataTool:
             index=["region"],
             columns="product",
             values="sales",
-            aggfunc="mean"
+            aggfunc="mean",
         )
 
         assert result["success"] is True
@@ -538,11 +536,21 @@ class TestCleanDataTool:
     def messy_data(self):
         """Create messy data for cleaning."""
         return [
-            {"name": "  Alice  ", "email": "ALICE@EXAMPLE.COM", "phone": "123-456-7890", "age": "25"},
-            {"name": "Bob", "email": "bob@example.com", "phone": "(555) 123-4567", "age": "30"},
+            {
+                "name": "  Alice  ",
+                "email": "ALICE@EXAMPLE.COM",
+                "phone": "123-456-7890",
+                "age": "25",
+            },
+            {
+                "name": "Bob",
+                "email": "bob@example.com",
+                "phone": "(555) 123-4567",
+                "age": "30",
+            },
             {"name": "", "email": "invalid-email", "phone": "555.123.4567", "age": ""},
             {"name": "Charlie", "email": None, "phone": "5551234567", "age": "35"},
-            {"name": "  DAVE  ", "email": "dave@EXAMPLE.com", "phone": "", "age": "40"}
+            {"name": "  DAVE  ", "email": "dave@EXAMPLE.com", "phone": "", "age": "40"},
         ]
 
     def test_tool_properties(self, tool):
@@ -556,9 +564,7 @@ class TestCleanDataTool:
     @pytest.mark.asyncio
     async def test_trim_whitespace(self, tool, messy_data):
         """Test trimming whitespace."""
-        operations = [
-            {"type": "trim", "fields": ["name"]}
-        ]
+        operations = [{"type": "trim", "fields": ["name"]}]
 
         result = await tool.safe_execute(data=messy_data, operations=operations)
 
@@ -566,15 +572,15 @@ class TestCleanDataTool:
         cleaned_data = result["result"]["cleaned_data"]
 
         # Check that whitespace is trimmed
-        alice_record = next(r for r in cleaned_data if "Alice" in str(r.get("name", "")))
+        alice_record = next(
+            r for r in cleaned_data if "Alice" in str(r.get("name", ""))
+        )
         assert alice_record["name"] == "Alice"  # No leading/trailing spaces
 
     @pytest.mark.asyncio
     async def test_standardize_case(self, tool, messy_data):
         """Test case standardization."""
-        operations = [
-            {"type": "lowercase", "fields": ["email"]}
-        ]
+        operations = [{"type": "lowercase", "fields": ["email"]}]
 
         result = await tool.safe_execute(data=messy_data, operations=operations)
 
@@ -589,9 +595,7 @@ class TestCleanDataTool:
     @pytest.mark.asyncio
     async def test_remove_nulls(self, tool, messy_data):
         """Test removing null/empty values."""
-        operations = [
-            {"type": "remove_nulls", "fields": ["name", "email"]}
-        ]
+        operations = [{"type": "remove_nulls", "fields": ["name", "email"]}]
 
         result = await tool.safe_execute(data=messy_data, operations=operations)
 
@@ -607,9 +611,7 @@ class TestCleanDataTool:
     @pytest.mark.asyncio
     async def test_standardize_text(self, tool, messy_data):
         """Test text standardization."""
-        operations = [
-            {"type": "standardize_text", "fields": ["name"]}
-        ]
+        operations = [{"type": "standardize_text", "fields": ["name"]}]
 
         result = await tool.safe_execute(data=messy_data, operations=operations)
 
@@ -626,7 +628,11 @@ class TestCleanDataTool:
     async def test_fill_nulls(self, tool, messy_data):
         """Test filling null values."""
         operations = [
-            {"type": "fill_nulls", "fields": ["name"], "parameters": {"fill_value": "Unknown"}}
+            {
+                "type": "fill_nulls",
+                "fields": ["name"],
+                "parameters": {"fill_value": "Unknown"},
+            }
         ]
 
         result = await tool.safe_execute(data=messy_data, operations=operations)
@@ -647,7 +653,7 @@ class TestCleanDataTool:
         operations = [
             {"type": "trim", "fields": ["name"]},
             {"type": "lowercase", "fields": ["email"]},
-            {"type": "remove_duplicates"}
+            {"type": "remove_duplicates"},
         ]
 
         result = await tool.safe_execute(data=messy_data, operations=operations)
@@ -663,13 +669,10 @@ class TestCleanDataTool:
         """Test validation after cleaning."""
         operations = [
             {"type": "trim", "fields": ["name"]},
-            {"type": "remove_nulls", "fields": ["name"]}
+            {"type": "remove_nulls", "fields": ["name"]},
         ]
 
-        result = await tool.safe_execute(
-            data=messy_data,
-            operations=operations
-        )
+        result = await tool.safe_execute(data=messy_data, operations=operations)
 
         assert result["success"] is True
 

@@ -25,56 +25,61 @@ class CreateChartTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to visualize (list of dictionaries)"
+                    "description": "Data to visualize (list of dictionaries)",
                 },
                 "chart_type": {
                     "type": "string",
-                    "enum": ["bar", "line", "scatter", "histogram", "box", "pie", "heatmap"],
-                    "description": "Type of chart to create"
+                    "enum": [
+                        "bar",
+                        "line",
+                        "scatter",
+                        "histogram",
+                        "box",
+                        "pie",
+                        "heatmap",
+                    ],
+                    "description": "Type of chart to create",
                 },
-                "x_axis": {
-                    "type": "string",
-                    "description": "Field for x-axis"
-                },
+                "x_axis": {"type": "string", "description": "Field for x-axis"},
                 "y_axis": {
                     "type": "string",
-                    "description": "Field for y-axis (not needed for pie charts)"
+                    "description": "Field for y-axis (not needed for pie charts)",
                 },
                 "title": {
                     "type": "string",
                     "description": "Chart title",
-                    "default": "Data Visualization"
+                    "default": "Data Visualization",
                 },
                 "width": {
                     "type": "integer",
                     "description": "Chart width in pixels",
                     "default": 800,
-                    "minimum": 200
+                    "minimum": 200,
                 },
                 "height": {
                     "type": "integer",
                     "description": "Chart height in pixels",
                     "default": 600,
-                    "minimum": 200
+                    "minimum": 200,
                 },
                 "color_scheme": {
                     "type": "string",
                     "enum": ["default", "viridis", "plasma", "cool", "warm"],
                     "description": "Color scheme for the chart",
-                    "default": "default"
+                    "default": "default",
                 },
                 "group_by": {
                     "type": "string",
-                    "description": "Field to group data by (for multi-series charts)"
+                    "description": "Field to group data by (for multi-series charts)",
                 },
                 "aggregation": {
                     "type": "string",
                     "enum": ["sum", "mean", "count", "min", "max"],
                     "description": "Aggregation function when grouping data",
-                    "default": "sum"
-                }
+                    "default": "sum",
+                },
             },
-            "required": ["data", "chart_type", "x_axis"]
+            "required": ["data", "chart_type", "x_axis"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -97,7 +102,7 @@ class CreateChartTool(BaseTool):
             return {
                 "chart_data": {},
                 "chart_config": {},
-                "message": "No data provided for visualization"
+                "message": "No data provided for visualization",
             }
 
         # Validate required parameters
@@ -118,7 +123,9 @@ class CreateChartTool(BaseTool):
                 raise ValueError(f"Y-axis field '{y_axis}' not found in data")
 
             # Prepare data based on chart type
-            chart_data = self._prepare_chart_data(df, chart_type, x_axis, y_axis, group_by, aggregation)
+            chart_data = self._prepare_chart_data(
+                df, chart_type, x_axis, y_axis, group_by, aggregation
+            )
 
             # Generate chart configuration
             chart_config = self._generate_chart_config(
@@ -135,15 +142,22 @@ class CreateChartTool(BaseTool):
                 "data_summary": {
                     "total_records": len(df),
                     "fields_used": [f for f in [x_axis, y_axis, group_by] if f],
-                    "chart_type": chart_type
-                }
+                    "chart_type": chart_type,
+                },
             }
 
         except Exception as e:
             raise RuntimeError(f"Failed to create chart: {str(e)}")
 
-    def _prepare_chart_data(self, df: pd.DataFrame, chart_type: str, x_axis: str,
-                          y_axis: str, group_by: str | None, aggregation: str) -> Dict:
+    def _prepare_chart_data(
+        self,
+        df: pd.DataFrame,
+        chart_type: str,
+        x_axis: str,
+        y_axis: str,
+        group_by: str | None,
+        aggregation: str,
+    ) -> Dict:
         """Prepare data for different chart types."""
 
         if chart_type == "pie":
@@ -153,10 +167,7 @@ class CreateChartTool(BaseTool):
             else:
                 grouped = df[x_axis].value_counts()
 
-            return {
-                "labels": grouped.index.tolist(),
-                "values": grouped.values.tolist()
-            }
+            return {"labels": grouped.index.tolist(), "values": grouped.values.tolist()}
 
         elif chart_type in ["bar", "line"]:
             if group_by:
@@ -166,17 +177,14 @@ class CreateChartTool(BaseTool):
                     index=x_axis,
                     columns=group_by,
                     aggfunc=aggregation,
-                    fill_value=0
+                    fill_value=0,
                 )
                 return {
                     "x_values": pivot_df.index.tolist(),
                     "series": [
-                        {
-                            "name": col,
-                            "values": pivot_df[col].tolist()
-                        }
+                        {"name": col, "values": pivot_df[col].tolist()}
                         for col in pivot_df.columns
-                    ]
+                    ],
                 }
             else:
                 # Single series
@@ -185,21 +193,21 @@ class CreateChartTool(BaseTool):
                     sorted_df = df.sort_values(x_axis)
                     return {
                         "x_values": sorted_df[x_axis].tolist(),
-                        "y_values": sorted_df[y_axis].tolist()
+                        "y_values": sorted_df[y_axis].tolist(),
                     }
                 else:
                     # For categorical x-axis, aggregate
                     grouped = df.groupby(x_axis)[y_axis].agg(aggregation)
                     return {
                         "x_values": grouped.index.tolist(),
-                        "y_values": grouped.values.tolist()
+                        "y_values": grouped.values.tolist(),
                     }
 
         elif chart_type == "scatter":
             return {
                 "x_values": df[x_axis].tolist(),
                 "y_values": df[y_axis].tolist(),
-                "point_labels": df.index.tolist()
+                "point_labels": df.index.tolist(),
             }
 
         elif chart_type == "histogram":
@@ -208,7 +216,7 @@ class CreateChartTool(BaseTool):
             return {
                 "bins": bins.tolist(),
                 "frequencies": hist.tolist(),
-                "bin_centers": ((bins[:-1] + bins[1:]) / 2).tolist()
+                "bin_centers": ((bins[:-1] + bins[1:]) / 2).tolist(),
             }
 
         elif chart_type == "box":
@@ -232,7 +240,7 @@ class CreateChartTool(BaseTool):
                 return {
                     "matrix": corr_matrix.values.tolist(),
                     "x_labels": corr_matrix.columns.tolist(),
-                    "y_labels": corr_matrix.index.tolist()
+                    "y_labels": corr_matrix.index.tolist(),
                 }
             else:
                 # Pivot table heatmap
@@ -242,12 +250,12 @@ class CreateChartTool(BaseTool):
                         index=x_axis,
                         columns=group_by,
                         aggfunc=aggregation,
-                        fill_value=0
+                        fill_value=0,
                     )
                     return {
                         "matrix": pivot_df.values.tolist(),
                         "x_labels": pivot_df.columns.tolist(),
-                        "y_labels": pivot_df.index.tolist()
+                        "y_labels": pivot_df.index.tolist(),
                     }
 
         return {}
@@ -272,11 +280,20 @@ class CreateChartTool(BaseTool):
             "median": float(median),
             "q3": float(q3),
             "max": float(data.max()),
-            "outliers": outliers.tolist()
+            "outliers": outliers.tolist(),
         }
 
-    def _generate_chart_config(self, chart_type: str, x_axis: str, y_axis: str,
-                             title: str, width: int, height: int, color_scheme: str, group_by: str | None) -> Dict:
+    def _generate_chart_config(
+        self,
+        chart_type: str,
+        x_axis: str,
+        y_axis: str,
+        title: str,
+        width: int,
+        height: int,
+        color_scheme: str,
+        group_by: str | None,
+    ) -> Dict:
         """Generate chart configuration."""
 
         color_schemes = {
@@ -284,7 +301,7 @@ class CreateChartTool(BaseTool):
             "viridis": ["#440154", "#31688e", "#35b779", "#fde725"],
             "plasma": ["#0d0887", "#7e03a8", "#cc4778", "#f89441", "#f0f921"],
             "cool": ["#6e8cd5", "#95b3e8", "#c4daf7", "#e8f4fd"],
-            "warm": ["#ff6b6b", "#ffa726", "#ffcc02", "#66bb6a"]
+            "warm": ["#ff6b6b", "#ffa726", "#ffcc02", "#66bb6a"],
         }
 
         return {
@@ -294,28 +311,29 @@ class CreateChartTool(BaseTool):
             "height": height,
             "colors": color_schemes.get(color_scheme, color_schemes["default"]),
             "axes": {
-                "x_axis": {
-                    "field": x_axis,
-                    "label": x_axis.replace("_", " ").title()
-                },
+                "x_axis": {"field": x_axis, "label": x_axis.replace("_", " ").title()},
                 "y_axis": {
                     "field": y_axis,
-                    "label": y_axis.replace("_", " ").title() if y_axis else ""
-                }
+                    "label": y_axis.replace("_", " ").title() if y_axis else "",
+                },
             },
             "grouping": {
                 "field": group_by,
-                "label": group_by.replace("_", " ").title() if group_by else None
-            }
+                "label": group_by.replace("_", " ").title() if group_by else None,
+            },
         }
 
-    def _generate_insights(self, df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: str) -> List[str]:
+    def _generate_insights(
+        self, df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: str
+    ) -> List[str]:
         """Generate insights about the data visualization."""
         insights = []
 
         # Data size insights
         if len(df) > 1000:
-            insights.append(f"Large dataset with {len(df):,} records - consider sampling for better performance")
+            insights.append(
+                f"Large dataset with {len(df):,} records - consider sampling for better performance"
+            )
 
         # Chart-specific insights
         if chart_type == "bar" and y_axis:
@@ -325,16 +343,30 @@ class CreateChartTool(BaseTool):
         elif chart_type == "line" and y_axis:
             if pd.api.types.is_numeric_dtype(df[y_axis]):
                 index_series = pd.Series(range(len(df)))
-                trend = "increasing" if df[y_axis].corr(index_series) > 0.1 else "decreasing" if df[y_axis].corr(index_series) < -0.1 else "stable"
+                trend = (
+                    "increasing"
+                    if df[y_axis].corr(index_series) > 0.1
+                    else (
+                        "decreasing"
+                        if df[y_axis].corr(index_series) < -0.1
+                        else "stable"
+                    )
+                )
                 insights.append(f"Overall trend appears to be {trend}")
 
         elif chart_type == "scatter" and y_axis:
-            if pd.api.types.is_numeric_dtype(df[x_axis]) and pd.api.types.is_numeric_dtype(df[y_axis]):
+            if pd.api.types.is_numeric_dtype(
+                df[x_axis]
+            ) and pd.api.types.is_numeric_dtype(df[y_axis]):
                 correlation = df[x_axis].corr(df[y_axis])
                 if abs(correlation) > 0.7:
-                    insights.append(f"Strong {'positive' if correlation > 0 else 'negative'} correlation detected (r={correlation:.2f})")
+                    insights.append(
+                        f"Strong {'positive' if correlation > 0 else 'negative'} correlation detected (r={correlation:.2f})"
+                    )
                 elif abs(correlation) > 0.3:
-                    insights.append(f"Moderate {'positive' if correlation > 0 else 'negative'} correlation detected (r={correlation:.2f})")
+                    insights.append(
+                        f"Moderate {'positive' if correlation > 0 else 'negative'} correlation detected (r={correlation:.2f})"
+                    )
 
         elif chart_type == "histogram":
             mean_val = df[x_axis].mean()
@@ -367,29 +399,29 @@ class DataSummaryTool(BaseTool):
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Data to summarize (list of dictionaries)"
+                    "description": "Data to summarize (list of dictionaries)",
                 },
                 "include_correlations": {
                     "type": "boolean",
                     "description": "Whether to include correlation analysis",
-                    "default": True
+                    "default": True,
                 },
                 "include_distributions": {
                     "type": "boolean",
                     "description": "Whether to include distribution analysis",
-                    "default": True
+                    "default": True,
                 },
                 "group_by": {
                     "type": "string",
-                    "description": "Field to group summary statistics by"
+                    "description": "Field to group summary statistics by",
                 },
                 "focus_fields": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Specific fields to focus analysis on (if not provided, analyzes all)"
-                }
+                    "description": "Specific fields to focus analysis on (if not provided, analyzes all)",
+                },
             },
-            "required": ["data"]
+            "required": ["data"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -404,11 +436,7 @@ class DataSummaryTool(BaseTool):
             raise ValueError("Data must be a list of dictionaries")
 
         if not data:
-            return {
-                "summary": "No data provided",
-                "statistics": {},
-                "insights": []
-            }
+            return {"summary": "No data provided", "statistics": {}, "insights": []}
 
         try:
             df = pd.DataFrame(data)
@@ -417,13 +445,20 @@ class DataSummaryTool(BaseTool):
             if focus_fields:
                 available_fields = [f for f in focus_fields if f in df.columns]
                 if available_fields:
-                    df = df[available_fields + ([group_by] if group_by and group_by not in available_fields else [])]
+                    df = df[
+                        available_fields
+                        + (
+                            [group_by]
+                            if group_by and group_by not in available_fields
+                            else []
+                        )
+                    ]
 
             # Generate comprehensive summary
             summary = {
                 "dataset_overview": self._generate_dataset_overview(df),
                 "field_summaries": self._generate_field_summaries(df),
-                "data_quality": self._assess_data_quality(df)
+                "data_quality": self._assess_data_quality(df),
             }
 
             # Add correlations if requested
@@ -436,7 +471,9 @@ class DataSummaryTool(BaseTool):
 
             # Add grouped analysis if requested
             if group_by and group_by in df.columns:
-                summary["grouped_analysis"] = self._generate_grouped_summary(df, group_by)
+                summary["grouped_analysis"] = self._generate_grouped_summary(
+                    df, group_by
+                )
 
             # Generate insights
             insights = self._generate_summary_insights(summary)
@@ -444,7 +481,7 @@ class DataSummaryTool(BaseTool):
             return {
                 "summary": summary,
                 "insights": insights,
-                "recommendations": self._generate_recommendations(summary)
+                "recommendations": self._generate_recommendations(summary),
             }
 
         except Exception as e:
@@ -453,8 +490,8 @@ class DataSummaryTool(BaseTool):
     def _generate_dataset_overview(self, df: pd.DataFrame) -> Dict:
         """Generate high-level dataset overview."""
         numeric_cols = df.select_dtypes(include=[np.number]).columns
-        categorical_cols = df.select_dtypes(include=['object', 'category']).columns
-        datetime_cols = df.select_dtypes(include=['datetime64']).columns
+        categorical_cols = df.select_dtypes(include=["object", "category"]).columns
+        datetime_cols = df.select_dtypes(include=["datetime64"]).columns
 
         return {
             "total_records": len(df),
@@ -462,13 +499,15 @@ class DataSummaryTool(BaseTool):
             "field_types": {
                 "numeric": len(numeric_cols),
                 "categorical": len(categorical_cols),
-                "datetime": len(datetime_cols)
+                "datetime": len(datetime_cols),
             },
             "memory_usage_mb": round(df.memory_usage(deep=True).sum() / 1024 / 1024, 2),
             "missing_values": {
                 "total_missing": df.isnull().sum().sum(),
-                "percentage": round((df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100, 2)
-            }
+                "percentage": round(
+                    (df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100, 2
+                ),
+            },
         }
 
     def _generate_field_summaries(self, df: pd.DataFrame) -> Dict:
@@ -481,28 +520,44 @@ class DataSummaryTool(BaseTool):
                 "data_type": str(series.dtype),
                 "non_null_count": series.count(),
                 "null_count": series.isnull().sum(),
-                "unique_values": series.nunique()
+                "unique_values": series.nunique(),
             }
 
             if pd.api.types.is_numeric_dtype(series):
-                summary.update({
-                    "mean": float(series.mean()) if not series.empty else None,
-                    "median": float(series.median()) if not series.empty else None,
-                    "std": float(series.std()) if not series.empty else None,
-                    "min": float(series.min()) if not series.empty else None,
-                    "max": float(series.max()) if not series.empty else None,
-                    "quartiles": {
-                        "q1": float(series.quantile(0.25)) if not series.empty else None,
-                        "q3": float(series.quantile(0.75)) if not series.empty else None
+                summary.update(
+                    {
+                        "mean": float(series.mean()) if not series.empty else None,
+                        "median": float(series.median()) if not series.empty else None,
+                        "std": float(series.std()) if not series.empty else None,
+                        "min": float(series.min()) if not series.empty else None,
+                        "max": float(series.max()) if not series.empty else None,
+                        "quartiles": {
+                            "q1": (
+                                float(series.quantile(0.25))
+                                if not series.empty
+                                else None
+                            ),
+                            "q3": (
+                                float(series.quantile(0.75))
+                                if not series.empty
+                                else None
+                            ),
+                        },
                     }
-                })
+                )
 
-            elif pd.api.types.is_string_dtype(series) or series.dtype == 'object':
+            elif pd.api.types.is_string_dtype(series) or series.dtype == "object":
                 value_counts = series.value_counts().head(5)
-                summary.update({
-                    "most_common": value_counts.to_dict(),
-                    "avg_length": round(series.astype(str).str.len().mean(), 2) if not series.empty else 0
-                })
+                summary.update(
+                    {
+                        "most_common": value_counts.to_dict(),
+                        "avg_length": (
+                            round(series.astype(str).str.len().mean(), 2)
+                            if not series.empty
+                            else 0
+                        ),
+                    }
+                )
 
             summaries[col] = summary
 
@@ -518,19 +573,30 @@ class DataSummaryTool(BaseTool):
 
         # Check for empty strings in object columns
         empty_strings = 0
-        for col in df.select_dtypes(include=['object']).columns:
-            empty_strings += (df[col] == '').sum()
+        for col in df.select_dtypes(include=["object"]).columns:
+            empty_strings += (df[col] == "").sum()
 
-        quality_score = max(0, 1 - ((missing_cells + empty_strings + duplicate_rows * len(df.columns)) / total_cells))
+        quality_score = max(
+            0,
+            1
+            - (
+                (missing_cells + empty_strings + duplicate_rows * len(df.columns))
+                / total_cells
+            ),
+        )
 
         return {
             "quality_score": round(quality_score, 3),
             "issues": {
                 "missing_values": missing_cells,
                 "duplicate_rows": duplicate_rows,
-                "empty_strings": empty_strings
+                "empty_strings": empty_strings,
             },
-            "completeness": round((1 - missing_cells / total_cells) * 100, 2) if total_cells > 0 else 100
+            "completeness": (
+                round((1 - missing_cells / total_cells) * 100, 2)
+                if total_cells > 0
+                else 100
+            ),
         }
 
     def _analyze_correlations(self, df: pd.DataFrame) -> Dict:
@@ -545,20 +611,30 @@ class DataSummaryTool(BaseTool):
         # Find strong correlations
         strong_correlations = []
         for i in range(len(corr_matrix.columns)):
-            for j in range(i+1, len(corr_matrix.columns)):
+            for j in range(i + 1, len(corr_matrix.columns)):
                 corr_val = corr_matrix.iloc[i, j]
-                if pd.notna(corr_val) and isinstance(corr_val, (int, float)) and abs(float(corr_val)) > 0.7:
+                if (
+                    pd.notna(corr_val)
+                    and isinstance(corr_val, (int, float))
+                    and abs(float(corr_val)) > 0.7
+                ):
                     corr_float = float(corr_val)
-                    strong_correlations.append({
-                        "field1": corr_matrix.columns[i],
-                        "field2": corr_matrix.columns[j],
-                        "correlation": round(corr_float, 3),
-                        "strength": "strong positive" if corr_float > 0.7 else "strong negative"
-                    })
+                    strong_correlations.append(
+                        {
+                            "field1": corr_matrix.columns[i],
+                            "field2": corr_matrix.columns[j],
+                            "correlation": round(corr_float, 3),
+                            "strength": (
+                                "strong positive"
+                                if corr_float > 0.7
+                                else "strong negative"
+                            ),
+                        }
+                    )
 
         return {
             "correlation_matrix": corr_matrix.round(3).to_dict(),
-            "strong_correlations": strong_correlations
+            "strong_correlations": strong_correlations,
         }
 
     def _analyze_distributions(self, df: pd.DataFrame) -> Dict:
@@ -576,13 +652,39 @@ class DataSummaryTool(BaseTool):
             std_val = series.std()
 
             # Assess skewness
-            skewness = "right-skewed" if mean_val > median_val * 1.1 else "left-skewed" if mean_val < median_val * 0.9 else "approximately normal"
+            skewness = (
+                "right-skewed"
+                if mean_val > median_val * 1.1
+                else (
+                    "left-skewed"
+                    if mean_val < median_val * 0.9
+                    else "approximately normal"
+                )
+            )
 
             distributions[col] = {
                 "distribution_type": skewness,
-                "outlier_count": len(series[(series < (series.quantile(0.25) - 1.5 * (series.quantile(0.75) - series.quantile(0.25)))) |
-                                         (series > (series.quantile(0.75) + 1.5 * (series.quantile(0.75) - series.quantile(0.25))))]),
-                "coefficient_of_variation": round((std_val / mean_val) * 100, 2) if mean_val != 0 else None
+                "outlier_count": len(
+                    series[
+                        (
+                            series
+                            < (
+                                series.quantile(0.25)
+                                - 1.5 * (series.quantile(0.75) - series.quantile(0.25))
+                            )
+                        )
+                        | (
+                            series
+                            > (
+                                series.quantile(0.75)
+                                + 1.5 * (series.quantile(0.75) - series.quantile(0.25))
+                            )
+                        )
+                    ]
+                ),
+                "coefficient_of_variation": (
+                    round((std_val / mean_val) * 100, 2) if mean_val != 0 else None
+                ),
             }
 
         return distributions
@@ -605,7 +707,7 @@ class DataSummaryTool(BaseTool):
             grouped_stats[str(group)] = {
                 "count": len(group_data),
                 "means": group_data.mean().round(2).to_dict(),
-                "medians": group_data.median().round(2).to_dict()
+                "medians": group_data.median().round(2).to_dict(),
             }
 
         return grouped_stats
@@ -619,25 +721,36 @@ class DataSummaryTool(BaseTool):
         if total_records > 10000:
             insights.append(f"Large dataset with {total_records:,} records")
         elif total_records < 100:
-            insights.append(f"Small dataset with only {total_records} records - consider gathering more data")
+            insights.append(
+                f"Small dataset with only {total_records} records - consider gathering more data"
+            )
 
         # Data quality insights
         quality_score = summary["data_quality"]["quality_score"]
         if quality_score < 0.7:
-            insights.append("Data quality is concerning - significant cleaning may be needed")
+            insights.append(
+                "Data quality is concerning - significant cleaning may be needed"
+            )
         elif quality_score > 0.95:
             insights.append("Excellent data quality with minimal issues")
 
         # Missing data insights
         missing_pct = summary["dataset_overview"]["missing_values"]["percentage"]
         if missing_pct > 20:
-            insights.append(f"High percentage of missing values ({missing_pct:.1f}%) - investigate data collection process")
+            insights.append(
+                f"High percentage of missing values ({missing_pct:.1f}%) - investigate data collection process"
+            )
 
         # Correlation insights
-        if "correlations" in summary and "strong_correlations" in summary["correlations"]:
+        if (
+            "correlations" in summary
+            and "strong_correlations" in summary["correlations"]
+        ):
             strong_corrs = len(summary["correlations"]["strong_correlations"])
             if strong_corrs > 0:
-                insights.append(f"Found {strong_corrs} strong correlations - potential for feature engineering or redundancy")
+                insights.append(
+                    f"Found {strong_corrs} strong correlations - potential for feature engineering or redundancy"
+                )
 
         return insights
 
@@ -648,7 +761,9 @@ class DataSummaryTool(BaseTool):
         # Data quality recommendations
         quality_issues = summary["data_quality"]["issues"]
         if quality_issues["missing_values"] > 0:
-            recommendations.append("Consider implementing data imputation strategies for missing values")
+            recommendations.append(
+                "Consider implementing data imputation strategies for missing values"
+            )
 
         if quality_issues["duplicate_rows"] > 0:
             recommendations.append("Remove duplicate rows to improve data quality")
@@ -656,12 +771,16 @@ class DataSummaryTool(BaseTool):
         # Performance recommendations
         memory_mb = summary["dataset_overview"]["memory_usage_mb"]
         if memory_mb > 100:
-            recommendations.append("Large dataset - consider data sampling or optimization for better performance")
+            recommendations.append(
+                "Large dataset - consider data sampling or optimization for better performance"
+            )
 
         # Analysis recommendations
         numeric_fields = summary["dataset_overview"]["field_types"]["numeric"]
         if numeric_fields >= 3:
-            recommendations.append("Multiple numeric fields available - consider correlation and clustering analysis")
+            recommendations.append(
+                "Multiple numeric fields available - consider correlation and clustering analysis"
+            )
 
         return recommendations
 
@@ -675,41 +794,43 @@ class ExportVisualizationTool(BaseTool):
 
     @property
     def description(self) -> str:
-        return "Export charts, summaries, and analysis results to files in various formats"
+        return (
+            "Export charts, summaries, and analysis results to files in various formats"
+        )
 
     def get_schema(self) -> Dict:
         return {
             "properties": {
                 "data": {
                     "type": "array",
-                    "description": "Raw data to export (list of dictionaries)"
+                    "description": "Raw data to export (list of dictionaries)",
                 },
                 "content": {
                     "type": "object",
-                    "description": "Content to export (chart data, summary, etc.)"
+                    "description": "Content to export (chart data, summary, etc.)",
                 },
                 "format": {
                     "type": "string",
                     "enum": ["json", "csv", "html", "markdown"],
-                    "description": "Output format"
+                    "description": "Output format",
                 },
                 "filename": {
                     "type": "string",
-                    "description": "Output filename (without extension)"
+                    "description": "Output filename (without extension)",
                 },
                 "include_metadata": {
                     "type": "boolean",
                     "description": "Whether to include metadata in export",
-                    "default": True
+                    "default": True,
                 },
                 "template": {
                     "type": "string",
                     "enum": ["minimal", "detailed", "report"],
                     "description": "Export template style",
-                    "default": "detailed"
-                }
+                    "default": "detailed",
+                },
             },
-            "required": ["content", "format", "filename"]
+            "required": ["content", "format", "filename"],
         }
 
     async def execute(self, **kwargs) -> Dict[str, Any]:
@@ -749,7 +870,7 @@ class ExportVisualizationTool(BaseTool):
                 "exported_content": exported_content,
                 "filename": full_filename,
                 "format": format_type,
-                "size_bytes": len(exported_content.encode('utf-8')),
+                "size_bytes": len(exported_content.encode("utf-8")),
                 "export_summary": {
                     "content_type": self._detect_content_type(content),
                     "template_used": template,
@@ -757,8 +878,8 @@ class ExportVisualizationTool(BaseTool):
                     "total_records": len(data) if data else 0,
                     "total_fields": len(data[0].keys()) if data and data else 0,
                     "timestamp": pd.Timestamp.now().isoformat(),
-                    "success": True
-                }
+                    "success": True,
+                },
             }
 
         except Exception as e:
@@ -772,7 +893,7 @@ class ExportVisualizationTool(BaseTool):
             export_data["export_metadata"] = {
                 "exported_at": pd.Timestamp.now().isoformat(),
                 "format": "json",
-                "version": "1.0"
+                "version": "1.0",
             }
 
         return json.dumps(export_data, indent=2, default=str)
@@ -788,10 +909,9 @@ class ExportVisualizationTool(BaseTool):
         if "chart_data" in content:
             chart_data = content["chart_data"]
             if "x_values" in chart_data and "y_values" in chart_data:
-                df = pd.DataFrame({
-                    "x": chart_data["x_values"],
-                    "y": chart_data["y_values"]
-                })
+                df = pd.DataFrame(
+                    {"x": chart_data["x_values"], "y": chart_data["y_values"]}
+                )
                 return df.to_csv(index=False)
 
         elif "summary" in content and "field_summaries" in content["summary"]:
@@ -811,7 +931,9 @@ class ExportVisualizationTool(BaseTool):
         df = pd.DataFrame(rows)
         return df.to_csv(index=False)
 
-    def _export_html(self, content: Dict, template: str, data: List[Dict] | None = None) -> str:
+    def _export_html(
+        self, content: Dict, template: str, data: List[Dict] | None = None
+    ) -> str:
         """Export content as HTML."""
         if template == "minimal":
             return self._generate_minimal_html(content, data)
@@ -820,7 +942,9 @@ class ExportVisualizationTool(BaseTool):
         else:  # detailed
             return self._generate_detailed_html(content, data)
 
-    def _export_markdown(self, content: Dict, template: str, data: List[Dict] | None = None) -> str:
+    def _export_markdown(
+        self, content: Dict, template: str, data: List[Dict] | None = None
+    ) -> str:
         """Export content as Markdown."""
         if template == "minimal":
             return self._generate_minimal_markdown(content, data)
@@ -829,7 +953,9 @@ class ExportVisualizationTool(BaseTool):
         else:  # detailed
             return self._generate_detailed_markdown(content, data)
 
-    def _generate_detailed_html(self, content: Dict, data: List[Dict] | None = None) -> str:
+    def _generate_detailed_html(
+        self, content: Dict, data: List[Dict] | None = None
+    ) -> str:
         """Generate detailed HTML report."""
         title = content.get("title", "Data Analysis Report")
         html = f"""
@@ -871,7 +997,9 @@ class ExportVisualizationTool(BaseTool):
         html += "</body></html>"
         return html
 
-    def _generate_detailed_markdown(self, content: Dict, data: List[Dict] | None = None) -> str:
+    def _generate_detailed_markdown(
+        self, content: Dict, data: List[Dict] | None = None
+    ) -> str:
         """Generate detailed Markdown report."""
         title = content.get("title", "Data Analysis Report")
         md = f"# {title}\n\n"
@@ -934,23 +1062,33 @@ class ExportVisualizationTool(BaseTool):
 
         return md
 
-    def _generate_minimal_html(self, content: Dict, data: List[Dict] | None = None) -> str:
+    def _generate_minimal_html(
+        self, content: Dict, data: List[Dict] | None = None
+    ) -> str:
         """Generate minimal HTML output."""
         return f"<html><body><pre>{json.dumps(content, indent=2)}</pre></body></html>"
 
-    def _generate_minimal_markdown(self, content: Dict, data: List[Dict] | None = None) -> str:
+    def _generate_minimal_markdown(
+        self, content: Dict, data: List[Dict] | None = None
+    ) -> str:
         """Generate minimal Markdown output."""
         return f"```json\n{json.dumps(content, indent=2)}\n```"
 
-    def _generate_report_html(self, content: Dict, data: List[Dict] | None = None) -> str:
+    def _generate_report_html(
+        self, content: Dict, data: List[Dict] | None = None
+    ) -> str:
         """Generate comprehensive report-style HTML."""
         # This would be a more elaborate report format
         return self._generate_detailed_html(content, data)  # For now, same as detailed
 
-    def _generate_report_markdown(self, content: Dict, data: List[Dict] | None = None) -> str:
+    def _generate_report_markdown(
+        self, content: Dict, data: List[Dict] | None = None
+    ) -> str:
         """Generate comprehensive report-style Markdown."""
         # This would be a more elaborate report format
-        return self._generate_detailed_markdown(content, data)  # For now, same as detailed
+        return self._generate_detailed_markdown(
+            content, data
+        )  # For now, same as detailed
 
     def _dict_to_html_table(self, data: Dict, max_depth: int = 2) -> str:
         """Convert dictionary to HTML table."""
